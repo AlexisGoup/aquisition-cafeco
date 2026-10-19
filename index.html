@@ -777,7 +777,7 @@ function remoteApi() {
     async me() { const { data } = await sb.auth.getSession(); return data.session?.user ?? null; },
     async login(email, password) {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(/invalid/i.test(error.message) ? "E-mail ou mot de passe incorrect." : error.message);
+      if (error) throw new Error(/invalid/i.test(error.message) ? (TEAM_EMAIL ? "Mot de passe incorrect." : "E-mail ou mot de passe incorrect.") : error.message);
       return data.user;
     },
     async logout() { await sb.auth.signOut(); },
@@ -1192,7 +1192,19 @@ function vSetPass() {
   </div>`;
 }
 
+// Connexion par mot de passe seul : le compte d'équipe est indiqué dans config.js
+const TEAM_EMAIL = String(CFG.LOGIN_EMAIL || "").trim().toLowerCase();
 function vLogin() {
+  if (TEAM_EMAIL) return `
+  <div class="login">
+    <div class="greet"><p class="label">${esc(CFG.ORG_NAME || "Connexion")}</p><h1>Bonjour</h1><p class="sub">Entrez le mot de passe. Vous resterez connecté sur cet appareil.</p></div>
+    <form class="panel" id="login-form" data-form="login">
+      <input type="email" id="login-email" value="${esc(TEAM_EMAIL)}" autocomplete="username" hidden>
+      <label class="field" for="login-pass">Mot de passe<input type="password" id="login-pass" autocomplete="current-password" required autofocus></label>
+      ${S.error ? errorBlock(S.error) : ""}
+      <button class="btn primary big block" type="submit">Entrer</button>
+    </form>
+  </div>`;
   return `
   <div class="login">
     <div class="greet"><p class="label">Connexion</p><h1>Bonjour</h1><p class="sub">Entrez l'e-mail et le mot de passe que l'on vous a donnés. Vous resterez connecté sur cet appareil.</p></div>
@@ -2201,7 +2213,7 @@ document.addEventListener("submit", async (e) => {
     catch (err) { S.error = /same|different/i.test(err.message) ? "C'est déjà votre mot de passe actuel : vous pouvez simplement vous connecter." : err.message; render(); }
   } else if (f.dataset.form === "login") {
     S.error = null;
-    try { S.user = await api.login($("#login-email").value.trim(), $("#login-pass").value); await boot(); }
+    try { S.user = await api.login((TEAM_EMAIL || $("#login-email").value).trim(), $("#login-pass").value); await boot(); }
     catch (err) { S.error = err.message; render(); }
   } else if (f.dataset.form === "settings") saveSettingsForm();
   else if (f.dataset.form === "add") submitAdd();
