@@ -467,6 +467,10 @@ input[type=range] { width: 100%; accent-color: var(--brass); min-height: 44px; }
    1. Constantes métier
    ===================================================================== */
 const CFG = window.APP_CONFIG || {};
+// Lien « réinitialiser le mot de passe » reçu par e-mail : on le repère avant que la page ne nettoie l'adresse
+const AUTH_HASH = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+const RECOVERY_LINK = AUTH_HASH.get("type") === "recovery" || /type=recovery/.test(location.search);
+const LINK_ERROR = AUTH_HASH.get("error_description") || AUTH_HASH.get("error") || "";
 const DEMO = !(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && !/xxxx|colle-ici/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY));
 
 const DEFAULTS = {
@@ -776,6 +780,9 @@ function remoteApi() {
       return data.user;
     },
     async logout() { await sb.auth.signOut(); },
+    async setPassword(password) { const { error } = await sb.auth.updateUser({ password }); if (error) throw new Error(error.message); },
+    async sendReset(email) { const { error } = await sb.auth.resetPasswordForEmail(email); if (error) throw new Error(error.message); },
+    onRecovery(cb) { sb.auth.onAuthStateChange((ev) => { if (ev === "PASSWORD_RECOVERY") cb(); }); },
     async getSettings() { const row = chk(await sb.from("settings").select("value").eq("key", "main").maybeSingle()); return row?.value || {}; },
     async saveSettings(v) { chk(await sb.from("settings").upsert({ key: "main", value: v })); },
     async count(status) {
@@ -911,6 +918,9 @@ function demoApi() {
     async me() { return { email: "demo@exemple.fr" }; },
     async login() { return { email: "demo@exemple.fr" }; },
     async logout() {},
+    async setPassword() {},
+    async sendReset() {},
+    onRecovery() {},
     async getSettings() { await wait(80); return clone(settings); },
     async saveSettings(v) { await wait(); settings = clone(v); },
     async count(status) { await wait(40); return P.filter((p) => !status || status === "tous" || p.status === status).length; },
@@ -1034,7 +1044,7 @@ function setNav() {
 
 function render() {
   const v = $("#view");
-  const views = { login: vLogin, home: vHome, session: vSession, visit: vVisit, list: vList, fiche: vFiche, tour: vTour, settings: vSettings };
+  const views = { setpass: vSetPass, login: vLogin, home: vHome, session: vSession, visit: vVisit, list: vList, fiche: vFiche, tour: vTour, settings: vSettings };
   // garder ce qui est en cours de saisie quand le même écran se redessine
   const a = document.activeElement;
   const keep = a && a.id && v.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)
@@ -1053,7 +1063,7 @@ function render() {
   const dock = $("#dock");
   const d = dockFor();
   dock.innerHTML = d; dock.hidden = !d;
-  $("#tabbar").hidden = S.view === "login" || FOCUS.has(S.view);
+  $("#tabbar").hidden = S.view === "login" || S.view === "setpass" || FOCUS.has(S.view);
   setNav();
   requestAnimationFrame(() => {
     const h = dock.hidden ? 0 : dock.offsetHeight - 80;
@@ -1169,6 +1179,19 @@ function whyHTML(p, where) {
 /* =====================================================================
    7. Connexion
    ===================================================================== */
+function vSetPass() {
+  return `
+  <div class="login">
+    <div class="greet"><p class="label">Mot de passe</p><h1>Choisissez votre mot de passe</h1><p class="sub">Au moins 8 caractères. Vous l'utiliserez pour vous connecter sur tous vos appareils.</p></div>
+    <form class="panel" data-form="setpass">
+      <label class="field" for="np-1">Nouveau mot de passe<input type="password" id="np-1" autocomplete="new-password" minlength="8" required></label>
+      <label class="field" for="np-2">Le même, une seconde fois<input type="password" id="np-2" autocomplete="new-password" minlength="8" required></label>
+      ${S.error ? errorBlock(S.error) : ""}
+      <button class="btn primary big block" type="submit">Enregistrer et entrer</button>
+    </form>
+  </div>`;
+}
+
 function vLogin() {
   return `
   <div class="login">
@@ -1178,6 +1201,8 @@ function vLogin() {
       <label class="field" for="login-pass">Mot de passe<input type="password" id="login-pass" autocomplete="current-password" required></label>
       ${S.error ? errorBlock(S.error) : ""}
       <button class="btn primary big block" type="submit">Se connecter</button>
+      <button class="btn quiet block" type="button" data-act="forgot">Mot de passe oublié ?</button>
+      ${S.loginInfo ? `<p class="notice">${esc(S.loginInfo)}</p>` : ""}
     </form>
   </div>`;
 }
@@ -1318,11 +1343,13 @@ async function rescoreAll(onProgress) {
 
 // Mise à jour complète : carte → registre → marchés publics → notes
 async function fullUpdate(onProgress) {
-  const mapChanged = await ensureMap(onProgress);
+  let mapChanged = false, mapError = null;
+  try { mapChanged = await ensureMap(onProgress); } catch (e) { mapError = e.message; }
   const n = await runHarvest({ onProgress });
   await refreshTenders();
   if (mapChanged) await rescoreAll(onProgress);
   S.harvesting = null;
+  S.mapError = mapError;
   return n;
 }
 
@@ -1371,7 +1398,7 @@ async function startSession() {
     const stale = !h?.done_at || h.cursor || dayDiff(h.done_at) < -30;
     if (pool.length < n * 2 && stale) {
       step(1, "Lecture de la carte des commerces autour de vous…");
-      await ensureMap();
+      try { await ensureMap(); } catch (_) { /* la carte est un bonus : la session continue sans elle */ }
       step(1, "Recherche de nouvelles entreprises dans le registre officiel…");
       await runHarvest({ untilPool: n * 3, onProgress: (pr) => step(1, `Recherche dans le registre : ${pr.label}…`) });
       pool = await api.fresh(n * 3, exclude, "remote");
@@ -2145,11 +2172,19 @@ const ACT = {
   harvest: async () => {
     try {
       const n = await fullUpdate(() => { if (S.view === "settings") render(); });
-      toast(`Base à jour : ${plural(n, "nouvelle entreprise", "nouvelles entreprises")}`, 4000);
+      toast(`Base à jour : ${plural(n, "nouvelle entreprise", "nouvelles entreprises")}${S.mapError ? ". La carte des cafés n'a pas pu être lue, elle sera retentée à la prochaine mise à jour" : ""}`, S.mapError ? 7000 : 4000);
     } catch (e) { S.harvesting = null; toast("Erreur : " + e.message, 5000); }
     if (S.view === "settings") render();
   },
   export: () => exportCsv(),
+  forgot: async () => {
+    const email = $("#login-email").value.trim();
+    S.error = null; S.loginInfo = null;
+    if (!email) { S.error = "Écrivez d'abord votre e-mail dans le champ ci-dessus."; render(); return; }
+    try { await api.sendReset(email); S.loginInfo = `Un e-mail vient d'être envoyé à ${email}. Ouvrez-le sur cet appareil et touchez le lien : une page vous demandera votre nouveau mot de passe.`; }
+    catch (err) { S.error = err.message; }
+    render();
+  },
   logout: async () => { await api.logout(); S.user = null; S.view = "login"; render(); },
 };
 
@@ -2180,7 +2215,14 @@ document.addEventListener("submit", async (e) => {
   const f = e.target.closest("form[data-form]");
   if (!f) return;
   e.preventDefault();
-  if (f.dataset.form === "login") {
+  if (f.dataset.form === "setpass") {
+    S.error = null;
+    const a = $("#np-1").value, b = $("#np-2").value;
+    if (a.length < 8) { S.error = "Au moins 8 caractères."; render(); return; }
+    if (a !== b) { S.error = "Les deux mots de passe ne sont pas identiques."; render(); return; }
+    try { await api.setPassword(a); S.recovering = false; history.replaceState(null, "", location.pathname); toast("Mot de passe enregistré"); await boot(); }
+    catch (err) { S.error = /same|different/i.test(err.message) ? "C'est déjà votre mot de passe actuel : vous pouvez simplement vous connecter." : err.message; render(); }
+  } else if (f.dataset.form === "login") {
     S.error = null;
     try { S.user = await api.login($("#login-email").value.trim(), $("#login-pass").value); await boot(); }
     catch (err) { S.error = err.message; render(); }
@@ -2191,10 +2233,13 @@ document.addEventListener("submit", async (e) => {
 /* =====================================================================
    16. Démarrage
    ===================================================================== */
+api.onRecovery(() => { S.recovering = true; S.view = "setpass"; render(); });
 async function boot() {
   try {
     S.user = await api.me();
+    if (LINK_ERROR && !S.user) { S.error = /expired|invalid/i.test(LINK_ERROR) ? "Ce lien a expiré ou a déjà servi. Écrivez votre e-mail puis touchez « Mot de passe oublié ? » pour en recevoir un nouveau." : LINK_ERROR; }
     if (!S.user) { S.view = "login"; render(); return; }
+    if (RECOVERY_LINK || S.recovering) { S.recovering = true; S.view = "setpass"; render(); return; }
     S.settings = mergeSettings(await api.getSettings());
     go("home");
   } catch (e) {
