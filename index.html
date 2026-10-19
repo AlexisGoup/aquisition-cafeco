@@ -748,6 +748,8 @@ const OUT = {
     } },
   plaquette: { label: "Plaquette déposée", tone: "info",
     apply: (p, i, s) => ({ patch: { status: "a_relancer", channel: phoneOk(p) ? "appel" : "visite", next_action: phoneOk(p) ? "Rappeler après mon passage" : "Repasser", next_action_at: phoneOk(p) ? addBusinessDays(s.delays.afterFlyer) : addDays(s.delays.revisit) }, log: "Plaquette déposée" }) },
+  tournee: { label: "À visiter : ajouter à la tournée", tone: "info",
+    apply: () => ({ patch: { status: "a_relancer", channel: "visite", next_action: "Passer le voir", next_action_at: new Date().toISOString() }, log: "Ajouté à la tournée" }) },
   ferme: { label: "Fermé définitivement", tone: "neutral",
     apply: () => ({ patch: { status: "ferme", next_action: null, next_action_at: null }, log: "Établissement fermé" }) },
   rdv_fait: { label: "RDV fait : proposition à suivre", tone: "info",
@@ -758,8 +760,8 @@ const OUT = {
     apply: () => ({ patch: { status: "client", next_action: null, next_action_at: null, attempts: 0 }, log: "Signé" }) },
 };
 const OUT_SETS = {
-  appel:  ["rdv", "rappel", "pas_reponse", "mail", "equipe", "pas_interesse", "mauvais_numero", "signe"],
-  email:  ["mail", "rdv", "rappel", "pas_interesse", "signe"],
+  appel:  ["rdv", "rappel", "pas_reponse", "tournee", "mail", "equipe", "pas_interesse", "mauvais_numero", "signe"],
+  email:  ["mail", "rdv", "rappel", "tournee", "pas_interesse", "signe"],
   visite: ["rdv", "plaquette", "absent", "equipe", "pas_interesse", "ferme", "signe"],
   rdv:    ["rdv_fait", "rdv_reporte", "pas_interesse", "signe"],
 };
@@ -1088,7 +1090,7 @@ function go(view, opts = {}) {
   closeSheet();
   window.scrollTo(0, 0);
   render();
-  const loaders = { home: loadHome, list: loadList, settings: loadSettingsView };
+  const loaders = { home: loadHome, list: loadList, settings: loadSettingsView, tour: loadTour };
   loaders[view]?.();
 }
 
@@ -1492,9 +1494,8 @@ function noContact(p, kind) {
   const id = esc(p.id);
   if (kind === "email") return `<div class="nophone"><p><b>Pas d'adresse e-mail.</b> Ajoutez-la depuis la fiche, ou copiez le texte ci-dessous.</p></div>`;
   return `<div class="nophone">
-    <p><b>${p.phone_status === "invalide" ? "Numéro invalide." : p.enriched_at ? "Numéro introuvable." : "Numéro pas encore recherché."}</b> Cherchez-le, puis enregistrez-le ici.</p>
-    <a class="btn block" href="${esc(googleSearch(p))}" target="_blank" rel="noopener">${ICON.search}Chercher le numéro</a>
-    <div class="row" style="flex-wrap:nowrap"><label class="sr" for="phone-${id}">Numéro de téléphone</label><input type="tel" id="phone-${id}" inputmode="tel" placeholder="04 67 …" style="flex:1;min-width:0"><button class="btn primary" data-act="savePhone" data-id="${id}">Enregistrer</button></div>
+    <p><b>${p.phone_status === "invalide" ? "Numéro invalide." : "Pas de numéro enregistré."}</b> Google le trouve en général en un clic.</p>
+    <a class="btn primary block" href="${esc(googleSearch(p))}" target="_blank" rel="noopener">${ICON.search}Chercher le numéro sur Google</a>
   </div>`;
 }
 
@@ -1571,13 +1572,13 @@ function focusHTML(p, where) {
 
 /* Résultats regroupés par fréquence : les deux plus courants en grand, puis les autres */
 const DOCK = {
-  appel:  { main: ["pas_reponse", "rdv"], sub: ["rappel", "equipe", "pas_interesse"], more: ["mauvais_numero", "mail", "signe"] },
-  email:  { main: ["mail", "rdv"], sub: ["rappel", "pas_interesse"], more: ["signe"] },
+  appel:  { main: ["pas_reponse", "rdv"], sub: ["tournee", "rappel", "equipe", "pas_interesse"], more: ["mauvais_numero", "mail", "signe"] },
+  email:  { main: ["mail", "rdv"], sub: ["tournee", "rappel", "pas_interesse"], more: ["signe"] },
   visite: { main: ["absent", "rdv"], sub: ["plaquette", "equipe", "pas_interesse"], more: ["ferme", "signe"] },
   rdv:    { main: ["signe", "rdv_fait"], sub: ["rdv_reporte", "pas_interesse"], more: [] },
 };
-const OC_ICON = { rdv: "check", signe: "star", pas_reponse: "redo", absent: "redo", rappel: "clock", rdv_reporte: "cal", rdv_fait: "redo", mail: "mail", plaquette: "mail", equipe: "minus", pas_interesse: "x", mauvais_numero: "phone", ferme: "minus" };
-const OC_SHORT = { rdv: "RDV pris", signe: "Signé", rappel: "Rappeler", equipe: "Déjà équipé", pas_interesse: "Pas intéressé", plaquette: "Plaquette", rdv_fait: "Proposition à suivre", rdv_reporte: "Reporté" };
+const OC_ICON = { tournee: "pin", rdv: "check", signe: "star", pas_reponse: "redo", absent: "redo", rappel: "clock", rdv_reporte: "cal", rdv_fait: "redo", mail: "mail", plaquette: "mail", equipe: "minus", pas_interesse: "x", mauvais_numero: "phone", ferme: "minus" };
+const OC_SHORT = { tournee: "À visiter", rdv: "RDV pris", signe: "Signé", rappel: "Rappeler", equipe: "Déjà équipé", pas_interesse: "Pas intéressé", plaquette: "Plaquette", rdv_fait: "Proposition à suivre", rdv_reporte: "Reporté" };
 function ocLabel(oid, ctx, short) { if (oid === "mail" && ctx === "appel") return "Doc envoyée par e-mail"; return (short && OC_SHORT[oid]) || OUT[oid].label; }
 function allOutcomes(ctx) { const d = DOCK[ctx] || DOCK.appel; return [...d.main, ...d.sub, ...d.more]; }
 function ocButton(p, oid, ctx, short) {
@@ -1688,7 +1689,8 @@ async function saveOutcome(pid, oid) {
       render();
       prefetchHistory();
     } else if (where === "visit") {
-      p._done = log; p._tone = toneOf(upd.status);
+      const stop = S.tour.stops?.find((x) => x.id === pid) || p;
+      Object.assign(stop, upd); stop._done = log; stop._tone = toneOf(upd.status);
       S.tour.current = null; S.view = "tour";
       window.scrollTo(0, 0); render();
     } else if (where === "fiche") {
@@ -1863,46 +1865,77 @@ async function submitAdd() {
    13. Tournée de visites
    ===================================================================== */
 function vTour() {
-  const T = S.tour || (S.tour = { count: 5, from: "home", stops: null, current: null });
-  const setup = `
-  <section class="panel" aria-labelledby="tour-setup">
-    <h2 id="tour-setup">${T.stops ? "Refaire une tournée" : "Préparer une tournée"}</h2>
-    <div class="stack" style="gap:8px"><p class="label">Nombre de visites</p>
-      <div class="seg" role="group" aria-label="Nombre de visites">${[3, 5, 8].map((n) => `<button data-act="tourCount" data-v="${n}" aria-pressed="${T.count === n}">${n}</button>`).join("")}</div></div>
-    <div class="stack" style="gap:8px"><p class="label">Départ</p>
+  const T = S.tour || (S.tour = { from: "home", stops: null, current: null, waiting: null });
+  const fromSeg = `<div class="stack" style="gap:8px"><p class="label">Départ</p>
       <div class="seg" role="group" aria-label="Point de départ">
         <button data-act="tourFrom" data-v="home" aria-pressed="${T.from === "home"}">${esc(S.settings?.center?.label?.split(" ")[0] || "Départ")}</button>
         <button data-act="tourFrom" data-v="gps" aria-pressed="${T.from === "gps"}">Ma position</button>
-      </div></div>
-    <button class="btn ${T.stops ? "" : "primary big "}block" data-act="buildTour">${ICON.route}${T.stops ? "Recalculer" : "Préparer la tournée"}</button>
-  </section>`;
-  const head = `<div class="greet"><p class="label">Sur le terrain</p><h1>Tournée</h1>${T.stops ? "" : `<p class="sub">D'abord les visites prévues aujourd'hui, puis les commerces proches où le patron est sur place, dans l'ordre le plus court.</p>`}</div>`;
-  if (T.loading) return head + loadingBlock("Je calcule l'itinéraire et je cherche les horaires…");
-  if (T.error) return head + errorBlock(T.error) + setup;
-  if (!T.stops) return head + setup;
-  if (!T.stops.length) return head + `<p class="notice">Aucune visite à faire pour le moment. Lancez une session d'appels depuis l'accueil.</p>` + setup;
-  const pts = T.stops.filter((p) => p.lat != null);
-  const origin = T.origin ? `&origin=${T.origin.lat},${T.origin.lng}` : "";
-  const last = pts[pts.length - 1];
-  const way = pts.slice(0, -1).slice(0, 8).map((p) => `${p.lat},${p.lng}`).join("|");
-  const route = last ? `https://www.google.com/maps/dir/?api=1${origin}&destination=${last.lat},${last.lng}${way ? `&waypoints=${enc(way)}` : ""}&travelmode=driving` : null;
-  const done = T.stops.filter((p) => p._done).length;
+      </div></div>`;
+  const head = `<div class="greet"><p class="label">Sur le terrain</p><h1>Tournée</h1></div>`;
+  if (T.loading) return head + loadingBlock("Je calcule l'ordre de passage le plus court…");
+  if (T.error) return head + errorBlock(T.error) + `<button class="btn block" data-act="tourReset">Revenir à la liste</button>`;
+
+  // tournée en cours
+  if (T.stops) {
+    const pts = T.stops.filter((p) => p.lat != null);
+    const origin = T.origin ? `&origin=${T.origin.lat},${T.origin.lng}` : "";
+    const last = pts[pts.length - 1];
+    const way = pts.slice(0, -1).slice(0, 8).map((p) => `${p.lat},${p.lng}`).join("|");
+    const route = last ? `https://www.google.com/maps/dir/?api=1${origin}&destination=${last.lat},${last.lng}${way ? `&waypoints=${enc(way)}` : ""}&travelmode=driving` : null;
+    const done = T.stops.filter((p) => p._done).length;
+    return `${head}
+    <section class="stack">
+      ${progressHTML(done, T.stops.length, done > 1 ? "visites faites" : "visite faite", [
+        [T.stops.filter((p) => p._done && p._tone === "go").length, "intéressé", "intéressés", "go"],
+        [T.stops.filter((p) => p._done && p._tone === "wait").length, "à revoir", "à revoir", "wait"],
+      ])}
+      ${route ? `<a class="btn primary block" href="${esc(route)}" target="_blank" rel="noopener">${ICON.route}Itinéraire complet dans Google Maps</a>` : ""}
+      <div class="stops">${T.stops.map((p, k) => `
+        <button class="stop${p._done ? " done" : ""}" data-act="visit" data-id="${esc(p.id)}">
+          <span class="k num">${p._done ? ICON.check : k + 1}</span>
+          <span><span class="n">${esc(p.name)}</span><span class="m">${esc(p.address || p.city || "")}</span><span class="m">${p._leg != null ? `${esc(km(p._leg))} depuis l'arrêt précédent` : ""}${p.next_action ? ` · ${esc(p.next_action)}` : ""}</span></span>
+          <span>${p._done ? stamp(p.status, p._done) : ""}</span>
+        </button>`).join("")}
+      </div>
+      <button class="btn block" data-act="tourReset">Terminer cette tournée</button>
+    </section>`;
+  }
+
+  // liste d'attente
+  const W = T.waiting;
+  if (W === null) return head + loadingBlock();
+  if (!W.length) return `${head}
+    <p class="notice"><b>Aucune entreprise à visiter.</b> Pendant une session d'appels, touchez <b>« À visiter »</b> : l'entreprise s'ajoute ici.</p>
+    <section class="panel stack">
+      <p class="sub">Pas de liste ? L'outil peut vous proposer les meilleurs commerces proches où le patron est sur place (garages, salles de sport…).</p>
+      ${fromSeg}
+      <button class="btn block" data-act="buildTour" data-v="fill">${ICON.route}Proposer 5 commerces proches</button>
+    </section>`;
   return `${head}
-  <section class="stack">
-    ${progressHTML(done, T.stops.length, done > 1 ? "visites faites" : "visite faite", [
-      [T.stops.filter((p) => p._done && p._tone === "go").length, "intéressé", "intéressés", "go"],
-      [T.stops.filter((p) => p._done && p._tone === "wait").length, "à revoir", "à revoir", "wait"],
-    ])}
-    ${route ? `<a class="btn primary block" href="${esc(route)}" target="_blank" rel="noopener">${ICON.route}Itinéraire complet dans Google Maps</a>` : ""}
-    <div class="stops">${T.stops.map((p, k) => `
-      <button class="stop${p._done ? " done" : ""}" data-act="visit" data-id="${esc(p.id)}">
-        <span class="k num">${p._done ? ICON.check : k + 1}</span>
-        <span><span class="n">${esc(p.name)}</span><span class="m">${esc(p.address || p.city || "")}</span><span class="m">${p._leg != null ? `${esc(km(p._leg))} depuis l'arrêt précédent` : ""}${p.next_action ? ` · ${esc(p.next_action)}` : ""}</span></span>
-        <span>${p._done ? stamp(p.status, p._done) : ""}</span>
-      </button>`).join("")}
-    </div>
-  </section>
-  ${setup}`;
+    <section class="stack" aria-labelledby="wait-l">
+      <h2 class="label" id="wait-l">À visiter · ${W.length}</h2>
+      <div class="rows">${W.map((p) => `
+        <button class="prow" data-act="open" data-id="${esc(p.id)}">
+          <span class="n">${esc(p.name)}</span>
+          <span class="r">${p.score != null && p.source !== "manuel" ? `<span class="score">${p.score}<small>/100</small></span>` : ""}</span>
+          <span class="m"><span>${esc(p.city || p.address || "Adresse inconnue")}${p.distance_km != null ? " · " + esc(km(p.distance_km)) : ""}</span>${p.next_action ? `<span>${esc(p.next_action)}</span>` : ""}</span>
+        </button>`).join("")}
+      </div>
+    </section>
+    <section class="panel stack">
+      ${fromSeg}
+      <button class="btn primary big block" data-act="buildTour">${ICON.route}Lancer la tournée (${plural(W.length, "visite", "visites")})</button>
+    </section>`;
+}
+
+async function loadTour() {
+  const T = S.tour || (S.tour = { from: "home", stops: null, current: null, waiting: null });
+  if (T.stops) return;
+  try {
+    T.waiting = (await api.due(endOfToday())).filter((p) => p.status !== "rdv" && channelOf(p) === "visite")
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  } catch (e) { T.error = e.message; }
+  if (S.view === "tour") render();
 }
 
 function vVisit() {
@@ -1911,7 +1944,7 @@ function vVisit() {
   return focusHTML(p, "visit");
 }
 
-async function buildTour() {
+async function buildTour(fill = false) {
   const T = S.tour;
   T.loading = true; T.error = null; render();
   try {
@@ -1921,26 +1954,28 @@ async function buildTour() {
         ? navigator.geolocation.getCurrentPosition((pos) => res({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => rej(new Error("Position indisponible : autorisez la localisation ou partez du point de départ.")), { timeout: 10000 })
         : rej(new Error("Localisation non disponible sur cet appareil.")));
     }
-    const due = (await api.due(endOfToday())).filter((p) => p.status !== "rdv" && channelOf(p) === "visite" && p.lat != null);
-    const fresh = (await api.fresh(40, due.map((p) => p.id), "visite")).filter((p) => p.lat != null);
-    // les visites prévues passent en premier, puis les meilleurs prospects proches
-    const picked = due.slice(0, T.count);
-    const near = fresh.map((p) => ({ p, d: haversine(origin, p) })).sort((a, b) => (b.p.score - b.d * 2) - (a.p.score - a.d * 2));
-    for (const x of near) { if (picked.length >= T.count) break; picked.push(x.p); }
-    // ordre de passage : le plus proche à chaque étape
-    const route = []; let cur = origin; const rest = [...picked];
+    let picked;
+    if (fill) {
+      const fresh = (await api.fresh(40, [], "visite")).filter((p) => p.lat != null);
+      picked = fresh.map((p) => ({ p, d: haversine(origin, p) })).sort((a, b) => (b.p.score - b.d * 2) - (a.p.score - a.d * 2)).slice(0, 5).map((x) => x.p);
+    } else picked = [...(T.waiting || [])];
+    // ordre de passage : le plus proche à chaque étape ; sans adresse précise, à la fin
+    const route = []; let cur = origin; const rest = picked.filter((p) => p.lat != null);
     while (rest.length) {
       let bi = 0, bd = Infinity;
       rest.forEach((p, i) => { const d = haversine(cur, p); if (d < bd) { bd = d; bi = i; } });
       const [p] = rest.splice(bi, 1); p._leg = Math.round(bd * 10) / 10; route.push(p); cur = p;
     }
-    const toEnrich = route.filter((p) => !p.enriched_at).map((p) => p.id);
+    route.push(...picked.filter((p) => p.lat == null));
+    const toEnrich = route.filter((p) => !p.enriched_at).map((p) => p.id).slice(0, 8);
     if (toEnrich.length) {
-      const res = await api.fn("enrich", { ids: toEnrich });
-      const byId = Object.fromEntries((res.prospects || []).map((p) => [p.id, p]));
-      route.forEach((p, i) => { if (byId[p.id]) route[i] = Object.assign(byId[p.id], { _leg: p._leg }); });
+      try {
+        const res = await api.fn("enrich", { ids: toEnrich });
+        const byId = Object.fromEntries((res.prospects || []).map((p) => [p.id, p]));
+        route.forEach((p, i) => { if (byId[p.id]) route[i] = Object.assign(byId[p.id], { _leg: p._leg }); });
+      } catch (_) { /* horaires facultatifs */ }
     }
-    for (const p of route) if (!p.channel) { p.channel = "visite"; api.update(p.id, { channel: "visite" }).catch(() => {}); }
+    for (const p of route) if (p.channel !== "visite") { p.channel = "visite"; api.update(p.id, { channel: "visite" }).catch(() => {}); }
     T.stops = route; T.origin = origin; T.open = null;
   } catch (e) { T.error = e.message; }
   T.loading = false;
@@ -2123,9 +2158,9 @@ const ACT = {
   filter: (t) => { S.list.status = t.dataset.v; S.list.rows = null; render(); loadList(); },
   addForm: () => { S.adding = true; S.addConfirmDup = false; render(); setTimeout(() => $("#add-name")?.focus(), 30); },
   addCancel: () => { S.adding = false; render(); },
-  tourCount: (t) => { S.tour.count = Number(t.dataset.v); render(); },
+  tourReset: () => { S.tour.stops = null; S.tour.error = null; S.tour.waiting = null; render(); loadTour(); },
   tourFrom: (t) => { S.tour.from = t.dataset.v; render(); },
-  buildTour: () => buildTour(),
+  buildTour: (t) => buildTour(t.dataset.v === "fill"),
   visit: async (t) => {
     S.tour.current = t.dataset.id; S.view = "visit"; window.scrollTo(0, 0); render();
     const p = S.tour.stops.find((x) => x.id === t.dataset.id);
