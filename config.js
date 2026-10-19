@@ -3,7 +3,7 @@
 // La clé « anon » / « publishable » est faite pour être publique :
 // ce sont les règles d'accès de la base qui protègent les données.
   window.APP_CONFIG = {
-    SUPABASE_URL: "https://abcdefgh.supabase.co",
-    SUPABASE_ANON_KEY: "sb_publishable_xxxxxxxx",
-    ORG_NAME: "Nom de l'entreprise de ton beau-père",
+    SUPABASE_URL: "https://iwhkvgguvptsvozsueou.supabase.co/rest/v1/",
+    SUPABASE_ANON_KEY: "sb_publishable_2AHDKQap157WvKc9YWQCBg_nyCoMg4R",
+    ORG_NAME: "Cafeco",
   };
