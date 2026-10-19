@@ -622,7 +622,8 @@ function initialChannel(p) {
   if (WALKIN.has(p.category) && (size === null || size < 10) && (p.distance_km ?? 99) <= 12) return "visite";
   if (phoneOk(p)) return "appel";
   if (p.email) return "email";
-  return "visite";
+  if (p.phone_status === "invalide") return "visite";
+  return "appel"; // numéro à chercher en un geste pendant la session
 }
 function channelOf(p) { return p.channel || initialChannel(p); }
 
@@ -793,8 +794,8 @@ function remoteApi() {
     async due(endIso) { return chk(await sb.from("prospects").select("*").lte("next_action_at", endIso).not("status", "in", FINAL_IN).order("next_action_at").limit(300)); },
     async fresh(limit, exclude, mode) {
       let q = sb.from("prospects").select("*").eq("status", "nouveau").is("next_action_at", null).order("score", { ascending: false }).limit(limit);
-      if (mode === "remote") q = q.or("channel.is.null,channel.eq.appel,channel.eq.email");
-      if (mode === "visite") q = q.or("channel.eq.visite,and(channel.is.null,category.in.(attente,sport,hotel))");
+      if (mode === "remote") q = q.or("channel.is.null,channel.eq.appel,channel.eq.email,and(channel.eq.visite,phone_status.is.null,category.not.in.(attente,sport,hotel,hebergement))");
+      if (mode === "visite") q = q.or("channel.eq.visite,and(channel.is.null,category.in.(attente,sport,hotel,hebergement))");
       if (mode === "visite_phone") q = q.eq("channel", "visite").not("phone", "is", null);
       if (exclude.length) q = q.not("id", "in", "(" + exclude.join(",") + ")");
       return chk(await q);
@@ -856,6 +857,7 @@ function demoApi() {
   const off = (dLat, dLng) => ({ lat: C.lat + dLat, lng: C.lng + dLng });
   const monthsAgo = (m) => { const d = new Date(); d.setMonth(d.getMonth() - m); return d.toISOString().slice(0, 10); };
   const HCL = { "02": "3 à 5 salariés", "03": "6 à 9 salariés", "11": "10 à 19 salariés", "12": "20 à 49 salariés", "21": "50 à 99 salariés", "22": "100 à 199 salariés" };
+  const demoJobs = { requested: false };
   const mk = (name, category, naf, naf_label, hc, city, pos, score, extra = {}) => {
     const dist = Math.round(haversine(C, pos) * 10) / 10;
     const reasons = [
@@ -914,6 +916,7 @@ function demoApi() {
   let extraAdded = false;
   const notFinal = (p) => !FINAL.includes(p.status);
   const clone = (x) => JSON.parse(JSON.stringify(x));
+  addDemoTender();
   return {
     async me() { return { email: "demo@exemple.fr" }; },
     async login() { return { email: "demo@exemple.fr" }; },
@@ -928,7 +931,7 @@ function demoApi() {
     async fresh(limit, exclude, mode) {
       await wait();
       let r = P.filter((p) => p.status === "nouveau" && !p.next_action_at && !exclude.includes(p.id));
-      if (mode === "remote") r = r.filter((p) => !p.channel || p.channel === "appel" || p.channel === "email");
+      if (mode === "remote") r = r.filter((p) => !p.channel || p.channel === "appel" || p.channel === "email" || (p.channel === "visite" && !p.phone_status && !WALKIN.has(p.category)));
       if (mode === "visite") r = r.filter((p) => p.channel === "visite" || (!p.channel && WALKIN.has(p.category)));
       if (mode === "visite_phone") r = r.filter((p) => p.channel === "visite" && p.phone);
       return clone(r.sort((a, b) => b.score - a.score).slice(0, limit));
@@ -954,7 +957,12 @@ function demoApi() {
     async upcomingRdv() { await wait(60); return clone(P.filter((p) => p.status === "rdv").sort((a, b) => a.next_action_at.localeCompare(b.next_action_at))); },
     async exportAll() { return clone(P); },
     async fn(action, body = {}) {
-      if (action === "status") { await wait(); return { google: false, demo: true, cap: 30 }; }
+      if (action === "status") {
+        await wait();
+        const w = demoJobs.requested ? { phase: "registre", progress: { group: 6, groups: 21 } } : { done_at: new Date(Date.now() - 2 * 86400000).toISOString(), stats: { inserted: 12, updated: 1830, closed: 3, enriched: 150 }, map: { count: 1840 } };
+        return { google: false, demo: true, cap: 900, used: 0, map: 1840, total: P.length, cron: true, mail: false, jobs: { weekly: w, daily: { at: new Date().toISOString(), found: 1 } } };
+      }
+      if (action === "request_update") { demoJobs.requested = true; setTimeout(() => { demoJobs.requested = false; }, 8000); return { ok: true }; }
       if (action === "enrich") {
         await wait(700);
         const out = [];
@@ -974,8 +982,16 @@ function demoApi() {
       }
       if (action === "osm") { await wait(1200); return { count: 1840, food: 1795, vending: 45 }; }
       if (action === "rescore") { await wait(600); return { cursor: null, updated: P.length, marked_clients: 0 }; }
+      if (action === "learn_clients") { await wait(900); return { found: (body.names || []).map((n) => ({ name: n, naf: null })), missing: [] }; }
       if (action === "tenders") {
         await wait(700);
+        if (addDemoTender()) return { found: 1, inserted: 1 };
+        return { found: 1, inserted: 0 };
+      }
+      throw new Error("Action inconnue");
+    },
+  };
+  function addDemoTender() {
         if (!P.some((p) => p.source === "marche_public")) {
           const d = new Date(); d.setDate(d.getDate() + 24);
           P.push(mk("Commune de Saint-Exemple (exemple)", "public", null, "Appel d'offres public", null, "Saint-Jean-de-Védas", off(0.004, 0.003), 99, {
@@ -986,26 +1002,10 @@ function demoApi() {
             score_reasons: ["Appel d'offres en cours : l'acheteur cherche un prestataire", "Installation et gestion de distributeurs automatiques (exemple fictif)", `Date limite de réponse : ${d.toLocaleDateString("fr-FR")}`],
             enriched_at: new Date().toISOString(),
           }));
-          return { found: 1, inserted: 1 };
+          return true;
         }
-        return { found: 1, inserted: 0 };
-      }
-      if (action === "learn_clients") { await wait(900); return { found: (body.names || []).map((n) => ({ name: n, naf: null })), missing: [] }; }
-      if (action === "harvest") {
-        await wait(900);
-        const g = (body.cursor?.g ?? 0) + 4;
-        if (g < 21) return { cursor: { g, page: 1 }, inserted: 0, progress: { group: g, groups: 21, label: ["Transport & logistique", "Clients en attente", "Industrie", "Dépôts & BTP", "Bureaux"][Math.min(4, Math.floor(g / 4))] } };
-        if (!extraAdded) {
-          extraAdded = true;
-          P.push(mk("Ambulances du Lez (exemple)", "sante", "86.90A", "Ambulances", "11", "Lattes", off(-0.02, 0.05), 62));
-          P.push(mk("Imprimerie Védasienne (exemple)", "industrie", "18.12Z", "Imprimerie", "11", "Saint-Jean-de-Védas", off(-0.008, -0.006), 57));
-          P.push(mk("Auto-Moto Atelier (exemple)", "attente", "45.40Z", "Concession et atelier moto", "02", "Lavérune", off(0.01, -0.03), 44));
-        }
-        return { cursor: null, inserted: 3, progress: { group: 21, groups: 21, label: "Terminé" } };
-      }
-      throw new Error("Action inconnue");
-    },
-  };
+        return false;
+  }
 }
 
 const api = DEMO ? demoApi() : remoteApi();
@@ -1223,7 +1223,7 @@ async function loadHome() {
     const won = act.filter((a) => a.outcome === "Signé").length;
     S.home = { remote, visits, rdv, contacts, rdvWeek, won, total, fresh, tenders };
   } catch (e) { S.home = { error: e.message }; }
-  if (!loadHome.tendersTried) { loadHome.tendersTried = true; refreshTenders().then((added) => { if (added && S.view === "home") loadHome(); }); }
+  loadStatus().then(() => { if (S.view === "home") render(); });
   if (S.view === "home") render();
 }
 
@@ -1235,7 +1235,7 @@ function vHome() {
   const due = h?.remote?.length ?? 0;
   const fromDue = Math.min(due, n);
   const rdvNext = h?.rdv?.[0];
-  const harvestInfo = S.settings?.harvest;
+  const job = jobLine(S.status);
   const fresh = (h?.fresh || []).slice(0, Math.max(0, n - fromDue));
   const plan = [...(h?.remote || []).slice(0, fromDue).map((p) => ({ p, due: true })), ...fresh.map((p) => ({ p, due: false }))];
   const shown = plan.slice(0, 4), rest = plan.length - shown.length;
@@ -1294,7 +1294,7 @@ function vHome() {
     </div>
   </section>
 
-  <p class="meta">${h ? (h.total ? `${plural(h.total, "entreprise", "entreprises")} dans un rayon de ${S.settings.radius} km autour de ${esc(S.settings.center.label)}` : "Base vide : elle se remplit au lancement de la première session.") : ""}${harvestInfo?.done_at ? ` · mise à jour le ${esc(fmtDay(harvestInfo.done_at))}` : ""}</p>`;
+  <p class="meta">${h ? (h.total ? `${plural(h.total, "entreprise", "entreprises")} dans un rayon de ${S.settings.radius} km autour de ${esc(S.settings.center.label)}, classées de la plus prometteuse à la moins prometteuse.` : "La base d'entreprises est en préparation.") : ""}${job ? ` ${esc(job.text)}` : ""}</p>`;
 }
 
 /* =====================================================================
@@ -1302,28 +1302,27 @@ function vHome() {
    ===================================================================== */
 const centerKey = (s) => `${s.center.lat},${s.center.lng},${s.radius}`;
 
-// Carte des commerces de bouche autour du point de départ (une fois par zone)
-async function ensureMap(onProgress) {
-  const s = S.settings;
-  if (s.osm?.key === centerKey(s)) return false;
-  S.harvesting = { label: "Carte des cafés et commerces autour de vous", group: 0, groups: 1 };
-  onProgress?.(S.harvesting);
-  const r = await api.fn("osm", { center: { lat: s.center.lat, lng: s.center.lng }, radius: s.radius });
-  s.osm = { key: centerKey(s), at: new Date().toISOString(), count: r.count };
-  await api.saveSettings(s);
-  return true;
+// État des tâches automatiques (faites par le serveur, jamais pendant une session)
+async function loadStatus(force = false) {
+  if (S.status && !force && Date.now() - S.status._at < 60000) return S.status;
+  try { S.status = { ...(await api.fn("status")), _at: Date.now() }; } catch (e) { S.status = { error: e.message, _at: Date.now() }; }
+  return S.status;
 }
-
-// Appels d'offres publics : vérifiés au plus une fois par jour, sans bloquer
-async function refreshTenders() {
-  const s = S.settings;
-  if (s.tenders?.at && dayDiff(s.tenders.at) === 0) return false;
-  try {
-    const r = await api.fn("tenders", { departements: [s.departement || "34"] });
-    s.tenders = { at: new Date().toISOString(), found: r.found };
-    await api.saveSettings(s);
-    return (r.inserted || 0) > 0;
-  } catch (_) { return false; /* source indisponible : on réessaiera */ }
+const PHASE = { carte: "lecture de la carte des cafés", registre: "recherche dans le registre", notes: "calcul des notes", coordonnees: "recherche des téléphones et e-mails" };
+function jobLine(st) {
+  const w = st?.jobs?.weekly;
+  if (!w) return null;
+  if (w.phase) {
+    const g = w.progress && w.phase === "registre" ? ` (${Math.min(w.progress.group + 1, w.progress.groups)}/${w.progress.groups})` : "";
+    return { busy: true, text: `Mise à jour en cours : ${PHASE[w.phase] || w.phase}${g}. Elle avance toute seule, toutes les 5 minutes.` };
+  }
+  if (w.requested) return { busy: true, text: "Mise à jour demandée : elle démarre dans les 5 minutes." };
+  if (w.done_at) {
+    const st2 = w.stats || {};
+    const bits = [st2.inserted ? `${plural(st2.inserted, "nouvelle", "nouvelles")}` : null, st2.updated ? `${st2.updated} vérifiées` : null, st2.closed ? `${plural(st2.closed, "fermée", "fermées")}` : null, st2.enriched ? `${st2.enriched} coordonnées cherchées` : null].filter(Boolean);
+    return { busy: false, text: `Dernière mise à jour automatique : ${fmtDay(w.done_at)}${bits.length ? ` (${bits.join(", ")})` : ""}.` };
+  }
+  return null;
 }
 
 // Recalcule toutes les notes avec la carte, les clients et les résultats
@@ -1339,43 +1338,6 @@ async function rescoreAll(onProgress) {
   await api.saveSettings(S.settings);
   S.harvesting = null;
   return n;
-}
-
-// Mise à jour complète : carte → registre → marchés publics → notes
-async function fullUpdate(onProgress) {
-  let mapChanged = false, mapError = null;
-  try { mapChanged = await ensureMap(onProgress); } catch (e) { mapError = e.message; }
-  const n = await runHarvest({ onProgress });
-  await refreshTenders();
-  if (mapChanged) await rescoreAll(onProgress);
-  S.harvesting = null;
-  S.mapError = mapError;
-  return n;
-}
-
-async function runHarvest({ untilPool = 0, onProgress } = {}) {
-  const s = S.settings;
-  S.harvesting = { label: "Démarrage", group: 0, groups: 21 };
-  onProgress?.(S.harvesting, 0);
-  let cursor = s.harvest?.cursor ?? null;
-  const restart = !cursor || s.harvest?.center_key !== `${s.center.lat},${s.center.lng},${s.radius}`;
-  if (restart) cursor = { g: 0, page: 1 };
-  let inserted = 0;
-  while (cursor) {
-    const res = await api.fn("harvest", { cursor, center: { lat: s.center.lat, lng: s.center.lng }, radius: s.radius });
-    inserted += res.inserted || 0;
-    cursor = res.cursor;
-    S.harvesting = res.progress;
-    onProgress?.(res.progress, inserted);
-    s.harvest = { cursor, center_key: `${s.center.lat},${s.center.lng},${s.radius}`, done_at: cursor ? s.harvest?.done_at || null : new Date().toISOString() };
-    await api.saveSettings(s);
-    if (untilPool && cursor) {
-      const pool = await api.fresh(untilPool, [], "remote");
-      if (pool.length >= untilPool) break;
-    }
-  }
-  S.harvesting = null;
-  return inserted;
 }
 
 /* =====================================================================
@@ -1394,15 +1356,6 @@ async function startSession() {
     const exclude = queue.map((p) => p.id);
     step(1);
     let pool = await api.fresh(n * 3, exclude, "remote");
-    const h = S.settings.harvest;
-    const stale = !h?.done_at || h.cursor || dayDiff(h.done_at) < -30;
-    if (pool.length < n * 2 && stale) {
-      step(1, "Lecture de la carte des commerces autour de vous…");
-      try { await ensureMap(); } catch (_) { /* la carte est un bonus : la session continue sans elle */ }
-      step(1, "Recherche de nouvelles entreprises dans le registre officiel…");
-      await runHarvest({ untilPool: n * 3, onProgress: (pr) => step(1, `Recherche dans le registre : ${pr.label}…`) });
-      pool = await api.fresh(n * 3, exclude, "remote");
-    }
     step(2, "");
     let rounds = 0;
     while (queue.length < n && pool.length && rounds < 5) {
@@ -1436,6 +1389,7 @@ async function startSession() {
       for (const p of extra) { p._phoneInstead = true; queue.push(p); }
     }
     S.session.queue = queue;
+    if (!queue.length) { S.session.total = await api.count().catch(() => null); S.session.job = jobLine(await loadStatus(true)); }
     S.session.loading = false;
   } catch (e) {
     S.session.loading = false;
@@ -1456,8 +1410,13 @@ function vSession() {
     ${s.msg ? `<p class="meta">${esc(s.msg)}</p>` : ""}`;
   }
   if (s.error) return `<div class="greet"><h1>La session n'a pas pu démarrer</h1></div>${errorBlock(s.error)}<button class="btn primary big block" data-act="nav" data-v="home">Retour à l'accueil</button>`;
+  if (!s.queue.length && s.total === 0) {
+    return `<div class="greet"><p class="label">Session</p><h1>La base est en préparation</h1><p class="sub">${esc(s.job?.text || "La base d'entreprises n'est pas encore construite. Elle se construit automatiquement en arrière-plan : vous pouvez fermer l'application et revenir plus tard.")}</p></div>
+    <button class="btn primary big block" data-act="nav" data-v="settings">Ouvrir les réglages</button>
+    <button class="btn block" data-act="nav" data-v="home">Accueil</button>`;
+  }
   if (!s.queue.length) {
-    return `<div class="greet"><p class="label">Session</p><h1>Rien à appeler pour l'instant</h1><p class="sub">Aucune relance prévue et aucun nouveau prospect joignable par téléphone ou e-mail. Les prospects restants sont à visiter.</p></div>
+    return `<div class="greet"><p class="label">Session</p><h1>Rien à appeler pour l'instant</h1><p class="sub">${s.total ? `${plural(s.total, "entreprise", "entreprises")} dans la base, mais aucune n'est à appeler aujourd'hui : les relances sont programmées plus tard et les commerces restants sont à visiter.` : "Aucune relance prévue et aucun nouveau prospect à appeler."}</p></div>
     <button class="btn primary big block" data-act="nav" data-v="tour">${ICON.pin}Préparer une tournée</button>
     <button class="btn block" data-act="nav" data-v="home">Accueil</button>`;
   }
@@ -1980,10 +1939,8 @@ async function buildTour() {
    14. Réglages
    ===================================================================== */
 async function loadSettingsView() {
-  if (S.googleOn === null) {
-    try { const r = await api.fn("status"); S.googleOn = !!r.google; S.googleCap = r.cap; } catch (_) { S.googleOn = false; }
-    if (S.view === "settings") render();
-  }
+  await loadStatus(true);
+  if (S.view === "settings") render();
 }
 
 function vSettings() {
@@ -2018,16 +1975,32 @@ function vSettings() {
 
   <section class="panel" aria-labelledby="base-t">
     <h2 id="base-t">Base d'entreprises</h2>
-    <p class="sub">Registre officiel des entreprises, filtré sur les activités qui achètent des distributeurs, dans un rayon de ${s.radius} km autour de ${esc(s.center.label)}.</p>
-    <ul class="base-st">
-      <li><b>Registre des entreprises</b><span>${s.harvest?.done_at ? `à jour le ${esc(fmtDay(s.harvest.done_at))}` : s.harvest?.cursor ? "en cours, à poursuivre" : "pas encore construit"}</span></li>
-      <li><b>Carte des cafés et commerces</b><span>${s.osm?.at && s.osm.key === centerKey(s) ? `${esc(String(s.osm.count ?? S.mapCount ?? "–"))} lieux, lue le ${esc(fmtDay(s.osm.at))}` : "pas encore lue"}</span></li>
-      <li><b>Appels d'offres publics</b><span>${s.tenders?.at ? `vérifiés le ${esc(fmtDay(s.tenders.at))}` : "pas encore vérifiés"}</span></li>
-      <li><b>Notes</b><span>${s.rescored_at ? `recalculées le ${esc(fmtDay(s.rescored_at))}` : "calculées à l'arrivée de chaque prospect"}</span></li>
-    </ul>
-    <p class="meta">Les prospects déjà présents et leur historique sont conservés, sans doublon.</p>
-    ${H ? `<div class="stack" style="gap:8px"><div class="row"><span class="spin"></span><span>${esc(H.label)} <span class="meta num">(${H.group}/${H.groups})</span></span></div><div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="${H.groups}" aria-valuenow="${H.group}"><i style="width:${Math.round((H.group / H.groups) * 100)}%"></i></div></div>` : `<div class="row"><button class="btn" data-act="harvest">${s.harvest?.cursor ? "Poursuivre la construction" : "Mettre à jour la base"}</button><button class="btn quiet" data-act="rescore">Recalculer les notes</button></div>`}
-    <p class="meta">Recherche des téléphones (Google) : ${S.googleOn === null ? "vérification…" : S.googleOn ? `active, ${S.googleCap || 30} fiches par jour au maximum` : DEMO ? "non disponible en démonstration" : "non configurée (voir le guide d'installation)"}.</p>
+    <p class="sub">Tout se met à jour automatiquement, en arrière-plan : l'application n'attend jamais pendant une session.</p>
+    ${(() => {
+      const st = S.status, w = st?.jobs?.weekly, d = st?.jobs?.daily, job = jobLine(st);
+      if (!st) return `<p class="meta">Chargement…</p>`;
+      if (st.error) return errorBlock(st.error);
+      return `<ul class="base-st">
+        <li><b>Entreprises dans la base</b><span>${esc(String(st.total ?? "–"))}</span></li>
+        <li><b>Registre officiel</b><span>${job ? esc(job.text.replace(/^Dernière mise à jour automatique : /, "à jour le ")) : "pas encore construit"}</span></li>
+        <li><b>Prochaine mise à jour</b><span>${w?.phase || w?.requested ? "en cours" : w?.done_at ? `vers le ${esc(fmtDay(new Date(new Date(w.done_at).getTime() + (s.refresh_days || 7) * 86400000).toISOString()))}` : "dans les 5 minutes"}</span></li>
+        <li><b>Carte des cafés et commerces</b><span>${w?.map?.count ? `${esc(String(w.map.count))} lieux` : w?.map?.error ? "indisponible, réessai à la prochaine mise à jour" : "pas encore lue"}</span></li>
+        <li><b>Appels d'offres publics</b><span>${d?.at ? `vérifiés le ${esc(fmtDay(d.at))}${d.mail === "envoyé" ? ", alerte envoyée" : ""}${d.error ? ` (erreur : ${esc(d.error)})` : ""}` : "vérifiés chaque jour à 17 h 30"}</span></li>
+        <li><b>Téléphones (Google)</b><span>${st.google ? `${esc(String(st.used ?? 0))} fiches sur ${esc(String(st.cap))} ce mois-ci` : DEMO ? "démonstration" : "non configuré : bouton « Chercher le numéro » sur chaque fiche"}</span></li>
+      </ul>
+      ${w?.error ? `<p class="notice">Dernière erreur : ${esc(w.error)}. Nouvel essai automatique dans 5 minutes.</p>` : ""}
+      ${!st.cron && !DEMO ? `<p class="notice"><b>Tâches automatiques non activées.</b> Suivez l'étape « Tâches automatiques » du guide d'installation.</p>` : ""}`;
+    })()}
+    <div class="row"><button class="btn" data-act="harvest">Mettre à jour maintenant</button><button class="btn quiet" data-act="rescore">Recalculer les notes</button></div>
+    ${S.harvesting ? `<div class="row"><span class="spin"></span><span>${esc(S.harvesting.label)}</span></div>` : ""}
+  </section>
+
+  <section class="panel" aria-labelledby="alert-t">
+    <h2 id="alert-t">Alertes appels d'offres</h2>
+    <p class="sub">Chaque jour à 17 h 30, si un nouvel appel d'offres pour des distributeurs paraît dans l'Hérault, un e-mail part à ces adresses.</p>
+    <label class="field" for="st-alerts">Adresses e-mail <span class="hint">séparées par une virgule</span><input type="text" id="st-alerts" inputmode="email" value="${esc(s.alert_emails || "")}" placeholder="vous@exemple.fr"></label>
+    ${S.status && !S.status.mail && !DEMO ? `<p class="meta">Envoi d'e-mails pas encore configuré (clé Resend, voir le guide).</p>` : ""}
+    <button class="btn" data-act="saveSettings">Enregistrer</button>
   </section>
 
   <section class="panel" aria-labelledby="cli-t">
@@ -2059,6 +2032,8 @@ async function saveSettingsForm() {
   s.delays.noAnswer = Number($("#st-d-na").value) || 2;
   s.delays.afterEmail = Number($("#st-d-em").value) || 4;
   s.delays.revisit = Number($("#st-d-rv").value) || 7;
+  s.alert_emails = ($("#st-alerts")?.value ?? s.alert_emails ?? "").trim();
+  s.app_url = location.origin + location.pathname;
   const label = $("#st-center").value.trim();
   try {
     if (label && label !== S.settings.center.label) {
@@ -2171,11 +2146,13 @@ const ACT = {
   },
   harvest: async () => {
     try {
-      const n = await fullUpdate(() => { if (S.view === "settings") render(); });
-      toast(`Base à jour : ${plural(n, "nouvelle entreprise", "nouvelles entreprises")}${S.mapError ? ". La carte des cafés n'a pas pu être lue, elle sera retentée à la prochaine mise à jour" : ""}`, S.mapError ? 7000 : 4000);
-    } catch (e) { S.harvesting = null; toast("Erreur : " + e.message, 5000); }
+      await api.fn("request_update");
+      await loadStatus(true);
+      toast("Mise à jour lancée : elle se fait en arrière-plan, vous pouvez continuer à utiliser l'application.", 5000);
+    } catch (e) { toast("Erreur : " + e.message, 5000); }
     if (S.view === "settings") render();
   },
+  saveSettings: () => saveSettingsForm(),
   export: () => exportCsv(),
   forgot: async () => {
     const email = $("#login-email").value.trim();
@@ -2241,6 +2218,8 @@ async function boot() {
     if (!S.user) { S.view = "login"; render(); return; }
     if (RECOVERY_LINK || S.recovering) { S.recovering = true; S.view = "setpass"; render(); return; }
     S.settings = mergeSettings(await api.getSettings());
+    const here = location.origin + location.pathname;
+    if (!DEMO && S.settings.app_url !== here) { S.settings.app_url = here; api.saveSettings(S.settings).catch(() => {}); }
     go("home");
   } catch (e) {
     $("#view").innerHTML = errorBlock("Connexion à la base impossible : " + e.message);
