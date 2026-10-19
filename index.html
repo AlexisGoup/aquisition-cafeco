@@ -1,0 +1,2208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Prospection Distributeurs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#eceff1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111417" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Direction : la façade d'un distributeur. Acier brossé (fonds), panneau émaillé (surfaces),
+   laiton du monnayeur (une seule couleur d'action), voyants de sélection (états).
+   Mise en page : une colonne à une main ; l'action principale est toujours sous le pouce.
+   Profondeur : bordures fines et changements de teinte ; ombre réservée au calque flottant
+   (barre de résultats, feuille, toast). Échelle typographique 1,25 à partir de 17 px. */
+:root {
+  --steel:      #eceff1;  /* fond de page */
+  --panel:      #ffffff;  /* surfaces */
+  --panel-sunk: #f3f5f6;  /* champs de saisie, zones en creux */
+  --rule:       rgba(21, 32, 43, .12);
+  --rule-strong:rgba(21, 32, 43, .22);
+  --ink:        #15191d;  /* texte principal (15,3:1) */
+  --ink-2:      #4a535c;  /* texte secondaire (6,8:1) */
+  --ink-3:      #646d76;  /* métadonnées (4,6:1 sur acier) */
+  --brass:      #8c5414;  /* action principale (6,2:1 avec blanc) */
+  --brass-ink:  #ffffff;
+  --brass-soft: #f4e9da;
+  --go:         #1f7a3d;  --go-soft:   #e1f1e5;   /* voyant vert : RDV, client */
+  --wait:       #2d5f9e;  --wait-soft: #e3ecf7;   /* voyant bleu : relance programmée */
+  --stop:       #b0322b;  --stop-soft: #f8e2df;   /* voyant rouge : retard, refus */
+  --float: 0 0 0 1px rgba(21,32,43,.08), 0 8px 24px -6px rgba(21,32,43,.18), 0 2px 6px rgba(21,32,43,.06);
+
+  --f-label: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --t-cap: 13px; --t-body: 17px; --t-lead: 19px; --t-h2: 22px; --t-h1: 28px; --t-num: 34px;
+  --r-ctl: 10px; --r-panel: 14px; --r-sheet: 20px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --dock-h: 0px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --steel: #111417; --panel: #1a1e22; --panel-sunk: #15181b;
+    --rule: rgba(255,255,255,.09); --rule-strong: rgba(255,255,255,.18);
+    --ink: #e9edf0; --ink-2: #aab3bb; --ink-3: #8a939b;
+    --brass: #d9a35f; --brass-ink: #1d1206; --brass-soft: #33281a;
+    --go: #76d08f; --go-soft: #18301f; --wait: #8fb6ec; --wait-soft: #1a2638; --stop: #f19a91; --stop-soft: #3a1f1c;
+    --float: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px -8px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --steel: #111417; --panel: #1a1e22; --panel-sunk: #15181b;
+  --rule: rgba(255,255,255,.09); --rule-strong: rgba(255,255,255,.18);
+  --ink: #e9edf0; --ink-2: #aab3bb; --ink-3: #8a939b;
+  --brass: #d9a35f; --brass-ink: #1d1206; --brass-soft: #33281a;
+  --go: #76d08f; --go-soft: #18301f; --wait: #8fb6ec; --wait-soft: #1a2638; --stop: #f19a91; --stop-soft: #3a1f1c;
+  --float: 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px -8px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0; background: var(--steel); color: var(--ink);
+  font-family: var(--f-body); font-size: var(--t-body); line-height: 1.5;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+h1, h2, h3 { margin: 0; font-family: var(--f-label); line-height: 1.15; text-wrap: balance; }
+h1 { font-size: var(--t-h1); font-weight: 800; letter-spacing: -.015em; font-stretch: 92%; }
+h2 { font-size: var(--t-h2); font-weight: 750; letter-spacing: -.01em; font-stretch: 92%; }
+p { margin: 0; text-wrap: pretty; }
+a { color: var(--brass); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; border-radius: 4px; }
+.num { font-variant-numeric: tabular-nums; }
+.meta { color: var(--ink-3); font-size: var(--t-cap); }
+.sub { color: var(--ink-2); }
+.stack { display: flex; flex-direction: column; gap: var(--s3); }
+.row { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* étiquette de section : petites capitales façon plaque de machine */
+.label {
+  font-family: var(--f-label); font-size: var(--t-cap); font-weight: 700; font-stretch: 80%;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); margin: 0;
+}
+
+/* ---------- barre du haut ---------- */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--steel); }
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--steel);
+  border-bottom: 1px solid var(--rule);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.topbar-in { max-width: 720px; margin: 0 auto; min-height: 52px; display: flex; align-items: center; gap: var(--s3); }
+.brand { display: flex; align-items: center; gap: var(--s2); min-width: 0; flex: 1; }
+.brand-mark { width: 28px; height: 28px; border-radius: 7px; background: var(--ink); color: var(--steel); display: grid; place-items: center; flex: none; }
+.brand-mark svg { width: 16px; height: 16px; }
+.brand-name { font-family: var(--f-label); font-weight: 750; font-stretch: 85%; font-size: 17px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.demo-tag { font-family: var(--f-label); font-size: 12px; font-weight: 700; font-stretch: 80%; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--rule-strong); color: var(--ink-2); }
+.topbar .back { appearance: none; border: 0; background: none; color: var(--brass); font-weight: 700; min-height: 44px; padding: 0 8px 0 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.topbar .back svg { width: 22px; height: 22px; }
+.topbar .title { font-family: var(--f-label); font-weight: 750; font-stretch: 88%; font-size: 17px; text-align: center; flex: 1; font-variant-numeric: tabular-nums; }
+.topbar .end { appearance: none; border: 0; background: none; color: var(--brass); font-weight: 700; min-height: 44px; min-width: 44px; padding: 0 0 0 8px; cursor: pointer; text-align: right; }
+
+main {
+  max-width: 720px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: var(--s5) calc(var(--dock-h) + 96px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: var(--s6);
+}
+main.focus-mode { gap: var(--s5); padding-top: var(--s4); }
+
+/* ---------- barre d'onglets ---------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--panel);
+  border-top: 1px solid var(--rule); padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
+}
+.tabbar-in { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tab { appearance: none; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 56px; padding: 7px 4px 8px; color: var(--ink-3); font-size: 12px; font-weight: 700; }
+.tab svg { width: 25px; height: 25px; }
+.tab[aria-current="page"] { color: var(--ink); }
+.tab[aria-current="page"] svg .fill { fill: currentColor; }
+.tab .fill { fill: none; }
+
+/* ---------- boutons ---------- */
+.btn {
+  appearance: none; cursor: pointer; text-decoration: none; text-align: center;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 48px; padding: 0 var(--s4); border-radius: var(--r-ctl);
+  border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink);
+  font-family: var(--f-body); font-weight: 700; font-size: 16px;
+  transition: transform .12s var(--ease), background-color .15s;
+}
+.btn:hover { background: var(--panel-sunk); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--brass); border-color: transparent; color: var(--brass-ink); }
+.btn.primary:hover { filter: brightness(1.07); background: var(--brass); }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--brass); padding-inline: var(--s2); }
+.btn.quiet:hover { background: var(--brass-soft); }
+.btn.big { min-height: 60px; font-size: 18px; border-radius: 14px; }
+.btn.block { width: 100%; }
+.btn.danger { color: var(--stop); }
+.btn:disabled { opacity: .5; cursor: default; transform: none; }
+.btn svg { width: 22px; height: 22px; flex: none; }
+
+/* contrôle segmenté (durée, nombre de visites, départ) */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--panel-sunk); border: 1px solid var(--rule); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { appearance: none; border: 0; background: transparent; min-height: 44px; border-radius: 9px; cursor: pointer; font-family: var(--f-label); font-stretch: 88%; font-weight: 700; font-size: 17px; color: var(--ink-2); font-variant-numeric: tabular-nums; padding: 0 6px; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 0 0 1px var(--rule-strong), 0 1px 2px rgba(0,0,0,.08); }
+
+/* filtres de liste (défilants) */
+.filters { display: flex; gap: var(--s2); overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.filters::-webkit-scrollbar { display: none; }
+.filter { appearance: none; flex: none; cursor: pointer; border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink-2); border-radius: 999px; min-height: 44px; padding: 0 14px; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.filter[aria-pressed="true"] { background: var(--ink); color: var(--steel); border-color: var(--ink); }
+.filter .n { font-variant-numeric: tabular-nums; font-weight: 400; margin-left: 6px; opacity: .8; }
+
+/* ---------- tampons d'état : forme + mot, jamais la couleur seule ---------- */
+.stamp {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  font-family: var(--f-label); font-size: 12px; font-weight: 750; font-stretch: 78%; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 8px 3px 6px; border-radius: 6px; border: 1.5px solid currentColor; color: var(--ink-3); background: transparent;
+}
+.stamp svg { width: 13px; height: 13px; }
+.stamp.go { color: var(--go); background: var(--go-soft); }
+.stamp.wait { color: var(--wait); background: var(--wait-soft); }
+.stamp.stop { color: var(--stop); background: var(--stop-soft); }
+.stamp.new { color: var(--brass); background: var(--brass-soft); }
+.stamp.closed { color: var(--ink-3); }
+
+/* ---------- feuille de passage (signature) ---------- */
+
+/* ---------- accueil ---------- */
+.greet { display: flex; flex-direction: column; gap: var(--s1); }
+.greet h1 { font-size: 32px; }
+.launch { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); padding: var(--s5) var(--s4) var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
+.launch .q { font-family: var(--f-label); font-size: var(--t-h2); font-weight: 750; font-stretch: 92%; }
+.yield { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; }
+.yield b { font-family: var(--f-label); font-size: var(--t-num); font-weight: 800; font-stretch: 85%; line-height: 1; font-variant-numeric: tabular-nums; }
+.yield span { color: var(--ink-2); }
+.agenda { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); overflow: hidden; }
+.agenda-row { appearance: none; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 40px 1fr auto 18px; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); min-height: 64px; border-top: 1px solid var(--rule); width: 100%; }
+.agenda-row:first-child { border-top: 0; }
+.agenda-row:hover { background: var(--panel-sunk); }
+.agenda-row .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--panel-sunk); color: var(--ink-2); }
+.agenda-row .ic svg { width: 21px; height: 21px; }
+.agenda-row .ic.hot { background: var(--wait-soft); color: var(--wait); }
+.agenda-row .t { font-weight: 700; }
+.agenda-row .d { color: var(--ink-3); font-size: 15px; display: block; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-row .c { font-family: var(--f-label); font-weight: 800; font-stretch: 85%; font-size: var(--t-h2); font-variant-numeric: tabular-nums; }
+.agenda-row .chev { color: var(--ink-3); width: 18px; height: 18px; }
+.agenda-row > span:nth-child(2) { min-width: 0; }
+.tally { display: flex; gap: var(--s5); flex-wrap: wrap; }
+.tally div { display: flex; align-items: baseline; gap: 6px; }
+.tally b { font-family: var(--f-label); font-size: var(--t-h2); font-weight: 800; font-stretch: 85%; font-variant-numeric: tabular-nums; }
+.tally span { color: var(--ink-2); font-size: 15px; }
+.notice { border: 1px solid var(--rule-strong); border-radius: var(--r-ctl); padding: var(--s3) var(--s4); font-size: 15px; color: var(--ink-2); background: var(--panel); }
+.notice b { color: var(--ink); }
+.err { border: 1.5px solid var(--stop); background: var(--stop-soft); color: var(--stop); border-radius: var(--r-ctl); padding: var(--s3) var(--s4); font-weight: 700; }
+
+/* ---------- liste ---------- */
+.search { position: relative; }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--ink-3); pointer-events: none; }
+.search input[type=search] { padding-left: 42px; }
+.rows { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); overflow: hidden; }
+.prow { appearance: none; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s3); padding: var(--s3) var(--s4); border-top: 1px solid var(--rule); min-height: 64px; }
+.prow:first-child { border-top: 0; }
+.prow:hover { background: var(--panel-sunk); }
+.prow .n { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.prow .r { align-self: start; padding-top: 2px; }
+.prow .m { grid-column: 1 / -1; color: var(--ink-3); font-size: 15px; display: flex; flex-wrap: wrap; gap: 0 10px; }
+.prow .m .late { color: var(--stop); font-weight: 700; }
+.score { font-family: var(--f-label); font-weight: 800; font-stretch: 80%; font-variant-numeric: tabular-nums; font-size: 15px; color: var(--ink-2); }
+.score small { font-weight: 500; color: var(--ink-3); }
+.empty { padding: var(--s5) var(--s4); text-align: center; color: var(--ink-2); }
+
+/* ---------- vue prospect (session, visite, fiche) ---------- */
+.p-head { display: flex; flex-direction: column; gap: var(--s2); }
+.p-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--ink-3); font-size: 15px; }
+.p-kicker .cat { font-family: var(--f-label); font-weight: 700; font-stretch: 80%; letter-spacing: .07em; text-transform: uppercase; font-size: var(--t-cap); color: var(--ink-2); }
+.p-head h1 { overflow-wrap: anywhere; }
+.p-legal { color: var(--ink-3); font-size: 15px; overflow-wrap: anywhere; }
+.askfor { display: flex; gap: var(--s3); align-items: center; padding: var(--s3) 0 0; font-size: var(--t-lead); }
+.askfor svg { width: 22px; height: 22px; color: var(--ink-3); flex: none; }
+.askfor b { font-weight: 700; }
+
+/* l'action principale : le numéro est le bouton */
+.primary-act { display: flex; flex-direction: column; gap: var(--s2); }
+.callbar {
+  display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: var(--s3);
+  min-height: 76px; padding: var(--s3) var(--s4) var(--s3) var(--s3); border-radius: 16px;
+  background: var(--brass); color: var(--brass-ink); text-decoration: none;
+  transition: transform .12s var(--ease);
+}
+.callbar:active { transform: scale(.98); }
+.callbar .ic { width: 52px; height: 52px; border-radius: 13px; background: rgba(255,255,255,.16); display: grid; place-items: center; }
+.callbar .ic svg { width: 26px; height: 26px; }
+.callbar .v { min-width: 0; }
+.callbar .v b { display: block; font-family: var(--f-label); font-size: clamp(21px, 6.2vw, 26px); font-weight: 800; font-stretch: 85%; font-variant-numeric: tabular-nums; letter-spacing: .01em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.callbar.place .v b { white-space: normal; font-size: 21px; }
+.callbar .v small { display: block; font-size: 15px; opacity: .85; }
+.callbar .go { font-family: var(--f-label); font-weight: 800; font-stretch: 85%; text-transform: uppercase; letter-spacing: .08em; font-size: 14px; }
+@media (max-width: 420px) { .callbar { grid-template-columns: 52px 1fr; } .callbar .go { display: none; } }
+.method-why { display: flex; gap: var(--s2); font-size: 15px; color: var(--ink-2); }
+.method-why b { color: var(--ink); }
+.nophone { border: 1.5px dashed var(--rule-strong); border-radius: 16px; padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+
+.facts { display: flex; flex-direction: column; border-top: 1px solid var(--rule); }
+.fact { display: grid; grid-template-columns: 24px 1fr auto; gap: var(--s3); align-items: center; padding: var(--s3) 0; border-bottom: 1px solid var(--rule); min-height: 56px; min-width: 0; }
+.fact > svg { width: 20px; height: 20px; color: var(--ink-3); }
+.fact .v { min-width: 0; overflow-wrap: anywhere; }
+.fact .v small { display: block; color: var(--ink-3); font-size: 14px; }
+.fact .v a { font-weight: 700; text-decoration: none; }
+.fact .acts { display: flex; gap: 2px; }
+.fact details summary { cursor: pointer; }
+
+.why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.why li { display: grid; grid-template-columns: 14px 1fr; gap: var(--s2); font-size: 16px; color: var(--ink-2); }
+.why li::before { content: ""; width: 6px; height: 6px; border-radius: 1px; background: var(--brass); margin-top: .62em; }
+.why li:first-child { color: var(--ink); font-weight: 700; }
+
+.opener { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s2); }
+.opener p { font-size: var(--t-lead); line-height: 1.45; }
+details.more { border-top: 1px solid var(--rule); }
+details.more:last-of-type { border-bottom: 1px solid var(--rule); }
+details.more > summary { list-style: none; cursor: pointer; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: var(--s3); font-weight: 700; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after { content: ""; width: 9px; height: 9px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg) translateY(-3px); transition: transform .18s var(--ease); flex: none; margin-right: 4px; }
+details.more[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+details.more .body { padding-bottom: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+.say { display: flex; flex-direction: column; gap: 2px; }
+.say .label { color: var(--brass); }
+.obj { display: flex; flex-direction: column; gap: 2px; }
+.obj q { font-weight: 700; quotes: "« " " »"; }
+.mail { background: var(--panel-sunk); border: 1px solid var(--rule); border-radius: var(--r-ctl); padding: var(--s3) var(--s4); white-space: pre-wrap; font-size: 15px; max-height: 300px; overflow: auto; }
+
+.history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.history li { display: grid; grid-template-columns: 84px 1fr; gap: var(--s3); font-size: 15px; }
+.history time { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.next { display: flex; align-items: center; gap: var(--s3); font-size: 16px; }
+.next svg { width: 20px; height: 20px; color: var(--wait); flex: none; }
+.next.late svg, .next.late b { color: var(--stop); }
+
+/* ---------- barre de résultats (sous le pouce) ---------- */
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; background: var(--panel); box-shadow: var(--float);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: var(--s3) max(12px, env(safe-area-inset-right, 0px)) calc(var(--s3) + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+.dock-in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--s2); }
+.dock .label { padding-left: 4px; }
+.dock-main, .dock-sub { display: grid; gap: var(--s2); }
+.dock-main { grid-template-columns: 1fr 1fr; }
+.dock-sub { display: flex; }
+.dock-sub .oc { flex: 1 1 0; min-width: 0; }
+.dock-sub .oc.more { flex: 0 0 52px; }
+@media (max-width: 480px) { .dock-sub .oc:not(.more) svg { display: none; } }
+.oc {
+  appearance: none; cursor: pointer; border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink);
+  border-radius: 12px; min-height: 52px; padding: 6px 8px; font-weight: 700; font-size: 15px; line-height: 1.15;
+  display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  transition: transform .12s var(--ease), background-color .15s;
+}
+.oc:active { transform: scale(.97); }
+.oc:hover { background: var(--panel-sunk); }
+.oc svg { width: 18px; height: 18px; flex: none; }
+.dock-main .oc { min-height: 58px; font-size: 17px; }
+.oc.go { background: var(--go); border-color: transparent; color: var(--panel); }
+.oc.go:hover { background: var(--go); filter: brightness(1.08); }
+.oc.wait { color: var(--wait); }
+.oc.neg { color: var(--stop); }
+.oc.more { color: var(--ink-2); }
+.inline-oc { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.note-field textarea { min-height: 64px; }
+
+/* ---------- feuille (dialog natif) ---------- */
+dialog.sheet {
+  border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px; max-height: 88dvh;
+  background: var(--panel); color: var(--ink); border-radius: var(--r-sheet) var(--r-sheet) 0 0; box-shadow: var(--float);
+}
+@media (min-width: 640px) { dialog.sheet { margin: auto; border-radius: var(--r-sheet); } }
+dialog.sheet::backdrop { background: rgba(10, 14, 18, .45); }
+dialog.sheet[open] { animation: sheet-in .26s var(--ease); }
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-in { padding: var(--s3) max(16px, env(safe-area-inset-right, 0px)) calc(var(--s4) + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: var(--s4); }
+.grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--rule-strong); margin: 0 auto; }
+.sheet-list { display: flex; flex-direction: column; gap: var(--s2); }
+.sheet-list .oc { justify-content: flex-start; padding-inline: var(--s4); font-size: 17px; }
+.quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--s2); }
+.quick button { appearance: none; cursor: pointer; border: 1px solid var(--rule-strong); background: var(--panel); border-radius: 11px; min-height: 48px; font-weight: 700; padding: 0 8px; }
+.quick button[aria-pressed="true"] { border: 2px solid var(--brass); background: var(--brass-soft); color: var(--ink); }
+
+/* ---------- formulaires ---------- */
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s4); }
+label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; }
+label.field .hint { font-weight: 400; color: var(--ink-3); }
+input[type=text], input[type=email], input[type=tel], input[type=password], input[type=number], input[type=date], input[type=datetime-local], input[type=search], select, textarea {
+  width: 100%; min-height: 48px; padding: 11px 12px; font-size: 17px;
+  background: var(--panel-sunk); border: 1px solid var(--rule-strong); border-radius: var(--r-ctl);
+}
+textarea { resize: vertical; min-height: 88px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brass); box-shadow: 0 0 0 3px var(--brass-soft); }
+input[type=range] { width: 100%; accent-color: var(--brass); min-height: 44px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
+.check { display: flex; gap: var(--s3); align-items: center; min-height: 44px; font-weight: 700; }
+.check input { width: 24px; height: 24px; accent-color: var(--brass); }
+
+/* ---------- préparation, chargement ---------- */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.steps li { display: flex; gap: var(--s3); align-items: center; color: var(--ink-3); min-height: 32px; }
+.steps li.on { color: var(--ink); font-weight: 700; }
+.steps li.ok { color: var(--go); }
+.spin { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--brass-soft); border-top-color: var(--brass); animation: sp .8s linear infinite; flex: none; }
+.dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--rule-strong); flex: none; display: grid; place-items: center; }
+.steps li.ok .dot { background: var(--go); border-color: var(--go); color: var(--panel); }
+.dot svg { width: 12px; height: 12px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+/* Appel d'offres (accueil) */
+.tender { display: flex; flex-direction: column; gap: 4px; text-align: left; width: 100%; padding: var(--s4); border-radius: 12px; border: 2px solid var(--brass); background: var(--brass-soft); color: var(--ink); font: inherit; cursor: pointer; }
+.tender .label { color: var(--brass); }
+.tender b { font-family: var(--f-label); font-size: var(--t-lead); font-weight: 800; }
+/* Au programme (accueil) */
+.yield small { display: block; font-size: 15px; color: var(--ink-3); margin-top: 4px; }
+.plan { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.plan li { display: grid; grid-template-columns: 76px 1fr; gap: var(--s3); align-items: center; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.plan .pk { font-family: var(--f-label); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.plan .pk small { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+.plan .pk.due { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--wait); }
+.plan .pn { min-width: 0; }
+.plan .pn b { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan .pn small { display: block; color: var(--ink-3); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan li.more-l { display: block; color: var(--ink-3); font-size: 15px; }
+/* Progression */
+.progress { display: flex; flex-direction: column; gap: 8px; }
+.pg-top { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; font-size: 15px; color: var(--ink-2); }
+.pg-counts { display: flex; gap: var(--s3); flex-wrap: wrap; }
+.pc.go b { color: var(--go); } .pc.wait b { color: var(--wait); }
+.progress .meter { height: 8px; }
+.pg-now { margin-top: -8px; }
+/* Pourquoi ce prospect */
+.why-box { display: flex; flex-direction: column; gap: 12px; }
+.pot { border-left: 3px solid var(--brass); padding: 2px 0 2px var(--s3); }
+.pot-v { margin: 0; font-family: var(--f-label); font-weight: 800; font-size: var(--t-lead); }
+.pot-p { margin: 2px 0 0; color: var(--ink-2); font-size: 15px; }
+.why li.warn { color: var(--stop); font-weight: 400; }
+.why li.warn::before { background: var(--stop); }
+.bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.bars li { display: grid; grid-template-columns: 1fr 34%  2.4em; gap: var(--s3); align-items: center; }
+.bars .bt b { display: block; font-size: 15px; } .bars .bt small { display: block; color: var(--ink-3); font-size: 13px; line-height: 1.3; }
+.bm { height: 8px; border-radius: 99px; background: var(--panel-sunk); overflow: hidden; }
+.bm i { display: block; height: 100%; background: var(--ink-3); border-radius: 99px; }
+.bm i.hi { background: var(--go); } .bm i.lo { background: var(--rule-strong); }
+.bv { text-align: right; font-weight: 700; }
+.base-st { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.base-st li { display: flex; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; font-size: 15px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+.base-st span { color: var(--ink-3); }
+.meter { height: 6px; border-radius: 99px; background: var(--panel-sunk); overflow: hidden; }
+.meter > i { display: block; height: 100%; background: var(--brass); border-radius: 99px; transition: width .4s var(--ease); }
+
+/* ---------- tournée ---------- */
+.stops { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-panel); overflow: hidden; }
+.stop { appearance: none; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; width: 100%; display: grid; grid-template-columns: 36px 1fr auto; gap: var(--s3); align-items: start; padding: var(--s3) var(--s4); border-top: 1px solid var(--rule); min-height: 68px; }
+.stop:first-child { border-top: 0; }
+.stop:hover { background: var(--panel-sunk); }
+.stop .k { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; font-family: var(--f-label); font-weight: 800; font-stretch: 85%; font-variant-numeric: tabular-nums; }
+.stop.done .k { background: var(--go); border-color: var(--go); color: var(--panel); }
+.stop .n { font-weight: 700; display: block; }
+.stop .m { color: var(--ink-3); font-size: 15px; display: block; }
+.leg { padding: 0 var(--s4) 0 calc(var(--s4) + 17px); }
+
+/* ---------- toast avec annulation ---------- */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 20;
+  bottom: calc(var(--dock-h) + 84px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: var(--s3); padding: 10px 10px 10px 16px; border-radius: 14px;
+  background: var(--ink); color: var(--steel); font-weight: 700; font-size: 15px; box-shadow: var(--float);
+  max-width: min(92vw, 520px); width: max-content;
+}
+.toast button { appearance: none; border: 0; background: transparent; color: var(--brass-soft); font-weight: 800; min-height: 40px; padding: 0 10px; border-radius: 9px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.toast:not(:has(button)) { padding-right: 16px; }
+
+.login { max-width: 420px; margin: 6vh auto 0; display: flex; flex-direction: column; gap: var(--s5); }
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0s !important; }
+  dialog.sheet[open] { animation: none; }
+  .spin { animation-duration: 3s; }
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+
+<main id="view" aria-live="polite"></main>
+
+<div class="dock" id="dock" hidden></div>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <div class="tabbar-in">
+    <button class="tab" data-act="nav" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fill" d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></svg>Accueil</button>
+    <button class="tab" data-act="nav" data-v="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="fill" x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-width="1.8"/></svg>Prospects</button>
+    <button class="tab" data-act="nav" data-v="tour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fill" d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4" fill="var(--panel)"/></svg>Tournée</button>
+    <button class="tab" data-act="nav" data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fill" d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle class="fill" cx="16" cy="6" r="2.2"/><circle class="fill" cx="10" cy="12" r="2.2"/><circle class="fill" cx="18" cy="18" r="2.2"/></svg>Réglages</button>
+  </div>
+</nav>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-title"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js" onerror="void 0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+"use strict";
+
+/* =====================================================================
+   1. Constantes métier
+   ===================================================================== */
+const CFG = window.APP_CONFIG || {};
+const DEMO = !(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && !/xxxx|colle-ici/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY));
+
+const DEFAULTS = {
+  center: { lat: 43.5781, lng: 3.8261, label: "Saint-Jean-de-Védas" },
+  radius: 10,
+  minutesPerContact: 4,
+  delays: { noAnswer: 2, afterEmail: 4, afterFlyer: 3, revisit: 7 },
+  company: CFG.ORG_NAME || "",
+  sender: "",
+  phone: "",
+  offer: "Installation gratuite, approvisionnement et entretien assurés par nos soins, sans engagement de durée.",
+  harvest: null,
+};
+
+const CAT = {
+  sante: "Santé & résidences", logistique: "Transport & logistique", industrie: "Industrie",
+  attente: "Clients en attente", sport: "Sport & loisirs", formation: "Formation",
+  gros_btp: "Dépôts & BTP", hotel: "Hébergement", hebergement: "Hébergement", commerce: "Grandes surfaces",
+  bureaux: "Bureaux", public: "Secteur public", manuel: "Ajout manuel",
+};
+const WALKIN = new Set(["attente", "sport", "hotel", "hebergement"]);
+const HC_MID = { "00": 0, "01": 1.5, "02": 4, "03": 7.5, "11": 15, "12": 35, "21": 75, "22": 150, "31": 225, "32": 375, "41": 750, "42": 1500, "51": 3500, "52": 7500, "53": 10000 };
+
+const STATUS = {
+  nouveau:           { label: "À contacter",     tone: "neutral" },
+  a_relancer:        { label: "En cours",        tone: "warn" },
+  rdv:               { label: "Rendez-vous",     tone: "accent" },
+  client:            { label: "Client",          tone: "good" },
+  equipe_ailleurs:   { label: "Équipé ailleurs", tone: "muted" },
+  perdu:             { label: "Pas intéressé",   tone: "muted" },
+  froid:             { label: "Injoignable",     tone: "muted" },
+  ferme:             { label: "Fermé",           tone: "muted" },
+  ne_plus_contacter: { label: "Ne plus contacter", tone: "bad" },
+};
+const FINAL = ["client", "ferme", "ne_plus_contacter"];
+const LIST_FILTERS = [
+  ["nouveau", "À contacter"], ["a_relancer", "En cours"], ["rdv", "RDV"], ["client", "Clients"],
+  ["equipe_ailleurs", "Équipés ailleurs"], ["perdu", "Pas intéressés"], ["froid", "Injoignables"], ["tous", "Tous"],
+];
+
+const ICON = {
+  machine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6h5M8 9.5h5M16 6v4M8 17h8"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  redo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>',
+  chevron: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  route: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H16a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h7.5"/></svg>',
+  dot: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6 9 7 9-7"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5a14.5 14.5 0 0 1 0 19M12 2.5a14.5 14.5 0 0 0 0 19"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5l3 2"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  walk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="m9 21 2-6 3 3v3M7 12l2-4 4 1 2 3 3 1M11 15l-1-4"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.8 2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>',
+};
+
+/* =====================================================================
+   2. Outils
+   ===================================================================== */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const enc = encodeURIComponent;
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function haversine(a, b) {
+  const R = 6371, t = (x) => (x * Math.PI) / 180;
+  const s = Math.sin(t(b.lat - a.lat) / 2) ** 2 + Math.cos(t(a.lat)) * Math.cos(t(b.lat)) * Math.sin(t(b.lng - a.lng) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function endOfToday() { const d = new Date(); d.setHours(23, 59, 59, 999); return d.toISOString(); }
+function startOfWeek() { const d = new Date(); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+function addDays(n, hour = 9) {
+  const d = new Date(); d.setDate(d.getDate() + n);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  d.setHours(hour, 0, 0, 0); return d.toISOString();
+}
+function addBusinessDays(n, hour = 9) {
+  const d = new Date(); let k = 0;
+  while (k < n) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; }
+  d.setHours(hour, 0, 0, 0); return d.toISOString();
+}
+function dayDiff(iso) {
+  const a = new Date(); a.setHours(0, 0, 0, 0);
+  const b = new Date(iso); b.setHours(0, 0, 0, 0);
+  return Math.round((b - a) / 86400000);
+}
+function fmtDay(iso, withTime = false) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const s = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  if (!withTime) return s;
+  return s + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", " h ");
+}
+function fmtRel(iso) {
+  if (!iso) return "";
+  const n = dayDiff(iso);
+  if (n < -1) return `en retard de ${-n} jours`;
+  if (n === -1) return "depuis hier";
+  if (n === 0) return "aujourd'hui";
+  if (n === 1) return "demain";
+  if (n < 7) return fmtDay(iso);
+  if (n < 60) return `dans ${n} jours`;
+  return `dans ${Math.round(n / 30)} mois`;
+}
+function hasTime(iso) { const d = new Date(iso); return !(d.getHours() === 9 && d.getMinutes() === 0); }
+function km(n) { return n == null ? "" : String(Math.round(n * 10) / 10).replace(".", ",") + " km"; }
+function phoneHref(p) { return "tel:" + String(p || "").replace(/[^\d+]/g, ""); }
+function cleanSearch(q) { return String(q || "").replace(/[,()*%\\":]/g, " ").replace(/\s+/g, " ").trim(); }
+
+function toast(msg, ms = 2600, undo = null) {
+  const t = $("#toast");
+  S.undo = undo;
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button type="button" data-act="undo">Annuler</button>' : ""}`;
+  t.hidden = false;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.hidden = true; S.undo = null; }, undo ? 6000 : ms);
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast("Copié"); }
+  catch { toast("Copie impossible : sélectionnez le texte à la main"); }
+}
+function mapsDir(p) {
+  if (p.lat != null) return `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${enc((p.name || "") + " " + (p.address || p.city || ""))}`;
+}
+function googleSearch(p) { return `https://www.google.com/search?q=${enc(`${p.name} ${p.city || ""} téléphone`)}`; }
+
+/* =====================================================================
+   3. Méthode conseillée, script d'appel et e-mail
+   ===================================================================== */
+function hcMid(p) { return p.headcount_code && p.headcount_code in HC_MID ? HC_MID[p.headcount_code] : null; }
+function phoneOk(p) { return !!p.phone && p.phone_status !== "invalide"; }
+
+function initialChannel(p) {
+  const size = hcMid(p);
+  if (p.source === "marche_public") return "email";
+  if (p.naf === "96.01B") return phoneOk(p) ? "appel" : p.email ? "email" : "visite";
+  if (WALKIN.has(p.category) && (size === null || size < 10) && (p.distance_km ?? 99) <= 12) return "visite";
+  if (phoneOk(p)) return "appel";
+  if (p.email) return "email";
+  return "visite";
+}
+function channelOf(p) { return p.channel || initialChannel(p); }
+
+function channelWhy(p, ch) {
+  const size = hcMid(p);
+  if (p.status === "rdv") return "Rendez-vous prévu : préparez votre présentation.";
+  if ((p.attempts || 0) >= 3 && ch === "visite") return "Plusieurs appels sans réponse : un passage sur place a plus de chances.";
+  if ((p.attempts || 0) >= 3 && ch === "email") return "Plusieurs appels sans réponse : un e-mail court peut débloquer la situation.";
+  if (ch === "visite") {
+    if (!phoneOk(p) && !p.email) return "Aucun téléphone ni e-mail trouvé : le plus simple est de passer.";
+    if (WALKIN.has(p.category)) return "Commerce ouvert au public : le patron est souvent sur place, 5 minutes en face à face convainquent mieux qu'un appel.";
+    return "Le passage sur place est la meilleure option pour ce prospect.";
+  }
+  if (ch === "email") return "Pas de numéro fiable : un e-mail court, puis une relance par téléphone ou sur place.";
+  if (p.naf === "96.01B") return "Pas de personnel sur place : appelez directement le gérant.";
+  if (size != null && size >= 20) return "Site avec une équipe : appelez le standard et demandez la personne qui s'occupe de la salle de pause ou des services généraux.";
+  if (p.manager_name) return `Petite structure : demandez directement ${p.manager_name}.`;
+  return "Un appel direct est le moyen le plus rapide d'obtenir un rendez-vous.";
+}
+
+const PITCH = {
+  sante: "Vos équipes travaillent jour et nuit et les familles passent du temps chez vous : un distributeur de boissons chaudes et d'en-cas disponible à toute heure rend service à tout le monde, et vous n'avez rien à gérer.",
+  logistique: "Pour des équipes en horaires décalés, un distributeur de café et d'en-cas sur place évite les sorties pendant les pauses. On installe, on remplit et on entretient : vous n'avez rien à gérer.",
+  industrie: "Pour des équipes de production, une machine à café et un distributeur d'en-cas près de l'atelier rendent les pauses plus agréables. On installe, on remplit et on entretient : vous n'avez rien à gérer.",
+  attente: "Vos clients patientent chez vous : un distributeur de boissons et d'en-cas rend l'attente plus agréable, et vous n'avez rien à gérer.",
+  laverie: "Vos clients restent sur place le temps d'un cycle : un distributeur de boissons et d'en-cas leur rend service, sans aucun travail pour vous.",
+  sport: "Vos adhérents cherchent de l'eau, une boisson ou un en-cas après la séance : un distributeur bien rempli, c'est un service en plus, sans travail pour vous.",
+  formation: "Vos stagiaires et vos équipes passent la journée chez vous : un coin café et en-cas change le quotidien, sans rien à gérer de votre côté.",
+  hotel: "Vos clients cherchent une boisson ou un en-cas à toute heure, y compris quand l'accueil est fermé : un distributeur répond à ce besoin, sans travail pour vos équipes.",
+  default: "Un bon café et des en-cas sur place pour vos équipes : on installe, on remplit et on entretient la machine, vous n'avez rien à gérer.",
+};
+function pitchOf(p) { return p.naf === "96.01B" ? PITCH.laverie : PITCH[p.category] || PITCH.default; }
+
+function scriptOf(p, s) {
+  const me = s.sender || "[votre prénom]";
+  const co = s.company || "[votre entreprise]";
+  const opener = p.manager_name && (hcMid(p) ?? 0) < 50
+    ? `Bonjour, ${me} de ${co}. Je souhaiterais parler à ${p.manager_name}, s'il vous plaît.`
+    : `Bonjour, ${me} de ${co}, nous sommes installés à côté de chez vous. Je cherche la personne qui s'occupe du café et de la salle de pause. C'est vous, ou à qui dois-je m'adresser ?`;
+  return {
+    opener,
+    pitch: pitchOf(p),
+    offer: s.offer,
+    questions: [
+      "Combien de personnes passent chez vous chaque jour (salariés et visiteurs) ?",
+      "Vous avez déjà une machine aujourd'hui ? Vous en êtes satisfait : pannes, réassort, prix ?",
+      "Qui décide pour ce genre d'équipement ?",
+    ],
+    close: "Le plus simple, c'est que je passe 10 minutes vous montrer ce qu'on propose. Plutôt en début ou en fin de semaine ?",
+    objections: [
+      ["On a déjà une machine.", "Très bien. Vous en êtes content ? Et le contrat se termine quand ? Je le note et je vous rappelle à ce moment-là."],
+      ["On n'a pas la place.", "Il existe des modèles compacts. Je peux passer voir l'emplacement en 5 minutes, sans engagement."],
+      ["On est trop petits.", "Pour une petite équipe, une simple machine à café suffit souvent. Je vous montre ce que ça donne ?"],
+      ["Envoyez-moi une documentation.", "Avec plaisir. Je l'envoie à quelle adresse ? Et je vous rappelle dans quelques jours pour en parler."],
+      ["Ça coûte combien ?", s.offer],
+      ["Je n'ai pas le temps.", "Je comprends. Je vous rappelle quand : demain matin ou plutôt en fin de journée ?"],
+    ],
+  };
+}
+
+function emailOf(p, s) {
+  const subjects = {
+    attente: "Un distributeur pour vos clients qui attendent",
+    sport: "Boissons et en-cas pour vos adhérents",
+    sante: "Boissons et en-cas à toute heure pour vos équipes et vos visiteurs",
+    hotel: "Boissons et en-cas pour vos clients, à toute heure",
+  };
+  const subject = subjects[p.category] || `Un coin café pour vos équipes à ${p.city || "votre site"}`;
+  const where = s.center?.label ? ` autour de ${s.center.label}` : "";
+  const body = [
+    "Bonjour,",
+    "",
+    `Je suis ${s.sender || "[votre prénom]"}, de ${s.company || "[votre entreprise]"}. Nous installons et gérons des distributeurs automatiques (café, boissons fraîches, en-cas) dans les entreprises${where}.`,
+    "",
+    pitchOf(p),
+    s.offer,
+    "",
+    `Est-ce que je peux passer 10 minutes vous présenter ce que nous proposons ? Dites-moi le moment qui vous arrange${s.phone ? `, ou appelez-moi au ${s.phone}` : ""}.`,
+    "",
+    "Bonne journée,",
+    s.sender || "[votre prénom]",
+    [s.company, s.phone].filter(Boolean).join(" · "),
+    "",
+    "Si ce sujet ne vous concerne pas, répondez simplement « non merci » et je ne vous relancerai pas.",
+  ].join("\n");
+  return { subject, body, href: `mailto:${p.email || ""}?subject=${enc(subject)}&body=${enc(body)}` };
+}
+
+/* =====================================================================
+   4. Résultats d'un contact et relances automatiques
+   ===================================================================== */
+const ASK_DATE = "date", ASK_DT = "datetime";
+const OUT = {
+  rdv: { label: "Intéressé : RDV pris", tone: "good", ask: ASK_DT,
+    apply: (p, i) => ({ patch: { status: "rdv", next_action: "Rendez-vous", next_action_at: i.date, attempts: 0 }, log: "RDV pris", detail: "RDV le " + fmtDay(i.date, true) }) },
+  rappel: { label: "Rappeler plus tard", tone: "info", ask: ASK_DATE,
+    apply: (p, i, s, ctx) => ({ patch: { status: "a_relancer", next_action: ctx === "visite" ? "Repasser (à sa demande)" : "Rappeler (à sa demande)", next_action_at: i.date, channel: ctx === "visite" ? "visite" : phoneOk(p) ? "appel" : channelOf(p) }, log: "Rappel demandé" }) },
+  pas_reponse: { label: "Pas de réponse", tone: "warn",
+    apply: (p, i, s) => {
+      const a = (p.attempts || 0) + 1;
+      if (a >= 5) return { patch: { attempts: a, status: "froid", next_action: null, next_action_at: null }, log: "Pas de réponse", detail: `${a} tentatives sans réponse : abandonné` };
+      if (a >= 3) {
+        const ch = (p.distance_km ?? 0) <= s.radius + 3 ? "visite" : p.email ? "email" : "appel";
+        return { patch: { attempts: a, status: "a_relancer", channel: ch, next_action: ch === "visite" ? "Passer le voir" : ch === "email" ? "Envoyer un e-mail" : "Rappeler", next_action_at: addBusinessDays(1) }, log: "Pas de réponse", detail: `${a} appels sans réponse : on change de méthode` };
+      }
+      return { patch: { attempts: a, status: "a_relancer", channel: "appel", next_action: a === 1 ? "Rappeler l'après-midi" : "Rappeler le matin", next_action_at: addBusinessDays(s.delays.noAnswer, a === 1 ? 14 : 10) }, log: "Pas de réponse", detail: `Tentative ${a}` };
+    } },
+  mail: { label: "E-mail envoyé", tone: "info",
+    apply: (p, i, s) => ({ patch: { status: "a_relancer", channel: phoneOk(p) ? "appel" : "visite", next_action: "Relancer après l'e-mail", next_action_at: addBusinessDays(s.delays.afterEmail) }, log: "E-mail envoyé" }) },
+  equipe: { label: "Déjà équipé", tone: "neutral",
+    apply: () => ({ patch: { status: "equipe_ailleurs", next_action: null, next_action_at: null }, log: "Déjà équipé" }) },
+  pas_interesse: { label: "Pas intéressé", tone: "bad",
+    apply: () => ({ patch: { status: "perdu", next_action: null, next_action_at: null }, log: "Pas intéressé" }) },
+  mauvais_numero: { label: "Mauvais numéro", tone: "warn",
+    apply: () => ({ patch: { phone_status: "invalide", status: "froid", next_action: null, next_action_at: null }, log: "Mauvais numéro" }) },
+  absent: { label: "Absent, repasser", tone: "warn",
+    apply: (p, i, s) => {
+      const a = (p.attempts || 0) + 1;
+      if (a >= 6) return { patch: { attempts: a, status: "froid", next_action: null, next_action_at: null }, log: "Absent", detail: `${a} tentatives : abandonné` };
+      const ch = a >= 2 && phoneOk(p) ? "appel" : "visite";
+      return { patch: { attempts: a, status: "a_relancer", channel: ch, next_action: ch === "appel" ? "Appeler (absent lors du passage)" : "Repasser", next_action_at: ch === "appel" ? addBusinessDays(2) : addDays(s.delays.revisit) }, log: "Absent" };
+    } },
+  plaquette: { label: "Plaquette déposée", tone: "info",
+    apply: (p, i, s) => ({ patch: { status: "a_relancer", channel: phoneOk(p) ? "appel" : "visite", next_action: phoneOk(p) ? "Rappeler après mon passage" : "Repasser", next_action_at: phoneOk(p) ? addBusinessDays(s.delays.afterFlyer) : addDays(s.delays.revisit) }, log: "Plaquette déposée" }) },
+  ferme: { label: "Fermé définitivement", tone: "neutral",
+    apply: () => ({ patch: { status: "ferme", next_action: null, next_action_at: null }, log: "Établissement fermé" }) },
+  rdv_fait: { label: "RDV fait : proposition à suivre", tone: "info",
+    apply: () => ({ patch: { status: "a_relancer", channel: "appel", next_action: "Relancer la proposition", next_action_at: addBusinessDays(5) }, log: "RDV fait" }) },
+  rdv_reporte: { label: "RDV reporté", tone: "warn", ask: ASK_DT,
+    apply: (p, i) => ({ patch: { status: "rdv", next_action: "Rendez-vous", next_action_at: i.date }, log: "RDV reporté", detail: "Nouveau RDV le " + fmtDay(i.date, true) }) },
+  signe: { label: "Signé : nouveau client", tone: "good", win: true,
+    apply: () => ({ patch: { status: "client", next_action: null, next_action_at: null, attempts: 0 }, log: "Signé" }) },
+};
+const OUT_SETS = {
+  appel:  ["rdv", "rappel", "pas_reponse", "mail", "equipe", "pas_interesse", "mauvais_numero", "signe"],
+  email:  ["mail", "rdv", "rappel", "pas_interesse", "signe"],
+  visite: ["rdv", "plaquette", "absent", "equipe", "pas_interesse", "ferme", "signe"],
+  rdv:    ["rdv_fait", "rdv_reporte", "pas_interesse", "signe"],
+};
+const CTX_LABEL = { appel: "Appel", email: "E-mail", visite: "Visite", rdv: "Rendez-vous" };
+
+/* =====================================================================
+   5. Accès aux données : Supabase, ou démo en mémoire
+   ===================================================================== */
+const FINAL_IN = "(" + FINAL.join(",") + ")";
+function chk(res) { if (res.error) throw new Error(res.error.message); return res.count ?? res.data; }
+
+function remoteApi() {
+  const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  return {
+    async me() { const { data } = await sb.auth.getSession(); return data.session?.user ?? null; },
+    async login(email, password) {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(/invalid/i.test(error.message) ? "E-mail ou mot de passe incorrect." : error.message);
+      return data.user;
+    },
+    async logout() { await sb.auth.signOut(); },
+    async getSettings() { const row = chk(await sb.from("settings").select("value").eq("key", "main").maybeSingle()); return row?.value || {}; },
+    async saveSettings(v) { chk(await sb.from("settings").upsert({ key: "main", value: v })); },
+    async count(status) {
+      let q = sb.from("prospects").select("id", { count: "exact", head: true });
+      if (status && status !== "tous") q = q.eq("status", status);
+      return (await q).count || 0;
+    },
+    async due(endIso) { return chk(await sb.from("prospects").select("*").lte("next_action_at", endIso).not("status", "in", FINAL_IN).order("next_action_at").limit(300)); },
+    async fresh(limit, exclude, mode) {
+      let q = sb.from("prospects").select("*").eq("status", "nouveau").is("next_action_at", null).order("score", { ascending: false }).limit(limit);
+      if (mode === "remote") q = q.or("channel.is.null,channel.eq.appel,channel.eq.email");
+      if (mode === "visite") q = q.or("channel.eq.visite,and(channel.is.null,category.in.(attente,sport,hotel))");
+      if (mode === "visite_phone") q = q.eq("channel", "visite").not("phone", "is", null);
+      if (exclude.length) q = q.not("id", "in", "(" + exclude.join(",") + ")");
+      return chk(await q);
+    },
+    async list(status, q, limit = 60) {
+      let x = sb.from("prospects").select("*").limit(limit);
+      if (status && status !== "tous") x = x.eq("status", status);
+      const term = cleanSearch(q);
+      if (term) x = x.or(`name.ilike.*${term}*,legal_name.ilike.*${term}*,city.ilike.*${term}*,phone.ilike.*${term}*`);
+      if (status === "nouveau") x = x.order("score", { ascending: false });
+      else if (status === "client") x = x.order("updated_at", { ascending: false });
+      else x = x.order("next_action_at", { ascending: true, nullsFirst: false }).order("updated_at", { ascending: false });
+      return chk(await x);
+    },
+    async get(id) { return chk(await sb.from("prospects").select("*").eq("id", id).single()); },
+    async update(id, patch) { return chk(await sb.from("prospects").update(patch).eq("id", id).select().single()); },
+    async insert(row) { return chk(await sb.from("prospects").insert(row).select().single()); },
+    async findDuplicate(name, phone) {
+      const term = cleanSearch(name);
+      const ors = [];
+      if (term) ors.push(`name.ilike."${term}"`, `legal_name.ilike."${term}"`);
+      if (phone) ors.push(`phone.eq."${cleanSearch(phone)}"`);
+      if (!ors.length) return null;
+      const rows = chk(await sb.from("prospects").select("id,name,city,status").or(ors.join(",")).limit(1));
+      return rows[0] || null;
+    },
+    async log(row) { return chk(await sb.from("interactions").insert(row).select("id").single()); },
+    async unlog(id) { chk(await sb.from("interactions").delete().eq("id", id)); },
+    async history(pid) { return chk(await sb.from("interactions").select("*").eq("prospect_id", pid).order("at", { ascending: false }).limit(60)); },
+    async activitySince(iso) { return chk(await sb.from("interactions").select("kind,outcome,at").gte("at", iso).limit(3000)); },
+    async tenders() { return chk(await sb.from("prospects").select("*").eq("source", "marche_public").not("status", "in", FINAL_IN).order("next_action_at").limit(5)); },
+    async upcomingRdv() { return chk(await sb.from("prospects").select("*").eq("status", "rdv").order("next_action_at").limit(10)); },
+    async exportAll() {
+      const out = [];
+      for (let from = 0; from < 20000; from += 1000) {
+        const rows = chk(await sb.from("prospects").select("*").order("score", { ascending: false }).range(from, from + 999));
+        out.push(...rows);
+        if (rows.length < 1000) break;
+      }
+      return out;
+    },
+    async fn(action, body = {}) {
+      const { data, error } = await sb.functions.invoke("prospects", { body: { action, ...body } });
+      if (error) {
+        let msg = error.message;
+        try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch (_) { /* rien */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+  };
+}
+
+function demoApi() {
+  const wait = (ms = 220) => sleep(ms);
+  let uid = 0; const nid = () => "demo-" + (++uid);
+  const C = DEFAULTS.center;
+  const off = (dLat, dLng) => ({ lat: C.lat + dLat, lng: C.lng + dLng });
+  const monthsAgo = (m) => { const d = new Date(); d.setMonth(d.getMonth() - m); return d.toISOString().slice(0, 10); };
+  const HCL = { "02": "3 à 5 salariés", "03": "6 à 9 salariés", "11": "10 à 19 salariés", "12": "20 à 49 salariés", "21": "50 à 99 salariés", "22": "100 à 199 salariés" };
+  const mk = (name, category, naf, naf_label, hc, city, pos, score, extra = {}) => {
+    const dist = Math.round(haversine(C, pos) * 10) / 10;
+    const reasons = [
+      { sante: "Équipes jour et nuit, familles et visiteurs sur place", logistique: "Chauffeurs et préparateurs en horaires décalés", industrie: "Équipes de production avec des pauses à heure fixe", attente: "Des clients patientent sur place", sport: "Des adhérents qui veulent boire et grignoter", formation: "Des stagiaires présents toute la journée", gros_btp: "Un dépôt où les équipes passent tôt le matin", hotel: "Des clients présents à toute heure", bureaux: "Des bureaux avec une salle de pause" }[category],
+      hc ? `${HCL[hc]} sur ce site` : "Effectif du site non communiqué",
+    ];
+    if (extra.est_created_on && dayDiff(extra.est_created_on) > -365) reasons.push(`Installé il y a ${Math.round(-dayDiff(extra.est_created_on) / 30.4)} mois : c'est le moment où l'on équipe ses locaux`);
+    reasons.push(`À ${km(dist)} du point de départ`);
+    const staff = { "02": 4, "03": 7, "11": 14, "12": 30, "21": 70, "22": 140 }[hc] ?? 4;
+    const visitors = { attente: 25, sport: 150, sante: 40, hebergement: 40, formation: staff * 3 }[category] ?? 0;
+    const people = Math.round(staff + 0.5 * visitors);
+    const lg = (x) => Math.max(0, Math.min(100, Math.round(((Math.log(Math.max(x, 1)) - Math.log(4)) / (Math.log(150) - Math.log(4))) * 100)));
+    const seed = name.length;
+    const parts = { volume: lg(people), isolement: 30 + (seed * 7) % 70, moment: extra.est_created_on ? 90 : 25, acces: 60 + (seed * 3) % 35, affinite: 45 + (seed * 5) % 30 };
+    const potential = people < 10 ? "Machine à café de comptoir" : people < 30 ? "Une machine à café" : people < 80 ? "Café + boissons fraîches et snacks" : "Plusieurs machines (café, boissons, snacks)";
+    const contact = staff >= 50 ? "Les services généraux, ou le secrétaire du CSE" : staff >= 11 ? (extra.manager_name ? `${extra.manager_name}, ou le responsable du site` : "Le directeur du site ou le responsable administratif") : WALKIN.has(category) ? "Le gérant, souvent sur place" : "Le gérant directement";
+    if (parts.isolement >= 85) reasons.splice(1, 0, "Aucun café, boulangerie ni supérette à moins de 400 m");
+    return Object.assign({
+      score_parts: parts, people_est: people, potential, contact_hint: contact,
+      id: nid(), siret: null, name, legal_name: name.replace(" (exemple)", "").toUpperCase(), category, naf, naf_label,
+      headcount_code: hc, headcount_label: hc ? HCL[hc] : null, network_size: 1,
+      address: `Zone d'activité fictive, ${city}`, city, lat: pos.lat, lng: pos.lng, distance_km: dist,
+      phone: null, email: null, website: null, maps_url: null, rating: null, rating_count: null, opening_hours: null,
+      score, score_reasons: reasons, channel: null, status: "nouveau", next_action: null, next_action_at: null,
+      attempts: 0, competitor: null, notes: null, source: "sirene", enriched_at: null, manager_name: null, manager_role: null,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }, extra);
+  };
+  const P = [
+    mk("Transports Garrigue (exemple)", "logistique", "49.41B", "Transport de marchandises de proximité", "12", "Saint-Jean-de-Védas", off(-0.012, 0.018), 83, { est_created_on: monthsAgo(4), manager_name: "Paul MARTIN", manager_role: "Gérant" }),
+    mk("Plateforme Mas Grillé (exemple)", "logistique", "52.10B", "Entrepôt, plateforme logistique", "21", "Saint-Jean-de-Védas", off(-0.004, 0.022), 76),
+    mk("Clinique des Oliviers (exemple)", "sante", "86.10Z", "Clinique, établissement de santé", "22", "Montpellier", off(0.03, 0.045), 79, { status: "a_relancer", attempts: 1, channel: "appel", next_action: "Rappeler l'après-midi", next_action_at: addDays(0, 14), phone: "01 99 00 00 11", enriched_at: new Date().toISOString(), rating: 4.1, rating_count: 212, last_contact_at: addDays(-2) }),
+    mk("Résidence Les Pins (exemple)", "sante", "87.10A", "EHPAD, maison de retraite médicalisée", "21", "Lattes", off(-0.03, 0.06), 73),
+    mk("Béton Express Sud (exemple)", "industrie", "23.63Z", "Produits minéraux (béton, verre...)", "12", "Saint-Jean-de-Védas", off(-0.014, -0.01), 66),
+    mk("Centre Call Occitanie (exemple)", "bureaux", "82.20Z", "Centre d'appels", "21", "Montpellier", off(0.045, 0.06), 68),
+    mk("Centre de formation Pro-Sud (exemple)", "formation", "85.59A", "Organisme de formation pour adultes", "12", "Montpellier", off(0.025, 0.035), 61, { est_created_on: monthsAgo(9) }),
+    mk("Messagerie Express 34 (exemple)", "logistique", "52.29A", "Messagerie, fret express", "11", "Villeneuve-lès-Maguelone", off(-0.05, 0.03), 57),
+    mk("Métallerie Occitane (exemple)", "industrie", "25.11Z", "Produits métalliques", "11", "Lavérune", off(0.012, -0.035), 55, { manager_name: "Sophie ROUX", manager_role: "Présidente" }),
+    mk("Négoce Matériaux du Sud (exemple)", "gros_btp", "46.73A", "Négoce de matériaux de construction", "12", "Fabrègues", off(-0.035, -0.04), 54),
+    mk("Fitness Club Védas (exemple)", "sport", "93.13Z", "Salle de sport, fitness", "03", "Saint-Jean-de-Védas", off(0.006, 0.01), 50, { channel: "visite", status: "a_relancer", attempts: 1, next_action: "Repasser", next_action_at: addDays(0), phone: "01 99 00 00 12", enriched_at: new Date().toISOString() }),
+    mk("Garage du Rond-Point (exemple)", "attente", "45.20A", "Garage automobile", "02", "Saint-Jean-de-Védas", off(-0.006, 0.004), 46),
+    mk("Contrôle Technique Védas (exemple)", "attente", "71.20A", "Contrôle technique automobile", "02", "Saint-Jean-de-Védas", off(0.002, -0.014), 45),
+    mk("Laverie Express (exemple)", "attente", "96.01B", "Laverie, pressing", null, "Montpellier", off(0.03, 0.02), 45),
+    mk("Hôtel Les Arcades (exemple)", "hebergement", "55.10Z", "Hôtel", "03", "Montpellier", off(0.035, 0.03), 39, { status: "equipe_ailleurs", channel: "appel", phone: "01 99 00 00 13", enriched_at: new Date().toISOString() }),
+    mk("Atelier Saveurs (exemple)", "industrie", "10.71A", "Industrie alimentaire", "11", "Saint-Jean-de-Védas", off(-0.009, 0.012), 58, { status: "client", phone: "01 99 00 00 14", enriched_at: new Date().toISOString() }),
+    mk("Distribution Sud Matériel (exemple)", "gros_btp", "46.69B", "Fournitures industrielles", "12", "Montpellier", off(0.02, 0.05), 63, { status: "rdv", next_action: "Rendez-vous", next_action_at: (() => { const d = new Date(addBusinessDays(1)); d.setHours(10, 30); return d.toISOString(); })(), phone: "01 99 00 00 15", enriched_at: new Date().toISOString(), channel: "appel" }),
+  ];
+  const I = [
+    { id: nid(), prospect_id: P[2].id, at: addDays(-2, 10), kind: "appel", outcome: "Pas de réponse", note: "Tentative 1" },
+    { id: nid(), prospect_id: P[10].id, at: addDays(-7, 11), kind: "visite", outcome: "Absent", note: "Responsable en congé, repasser" },
+    { id: nid(), prospect_id: P[14].id, at: addDays(-5, 15), kind: "appel", outcome: "Déjà équipé", note: null },
+    { id: nid(), prospect_id: P[15].id, at: addDays(-3, 9), kind: "rdv", outcome: "Signé", note: "1 machine café + 1 snack" },
+    { id: nid(), prospect_id: P[16].id, at: addDays(-1, 16), kind: "appel", outcome: "RDV pris", note: "Voir M. le responsable de dépôt" },
+  ];
+  let settings = {};
+  let extraAdded = false;
+  const notFinal = (p) => !FINAL.includes(p.status);
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+  return {
+    async me() { return { email: "demo@exemple.fr" }; },
+    async login() { return { email: "demo@exemple.fr" }; },
+    async logout() {},
+    async getSettings() { await wait(80); return clone(settings); },
+    async saveSettings(v) { await wait(); settings = clone(v); },
+    async count(status) { await wait(40); return P.filter((p) => !status || status === "tous" || p.status === status).length; },
+    async due(endIso) { await wait(); return clone(P.filter((p) => p.next_action_at && p.next_action_at <= endIso && notFinal(p)).sort((a, b) => a.next_action_at.localeCompare(b.next_action_at))); },
+    async fresh(limit, exclude, mode) {
+      await wait();
+      let r = P.filter((p) => p.status === "nouveau" && !p.next_action_at && !exclude.includes(p.id));
+      if (mode === "remote") r = r.filter((p) => !p.channel || p.channel === "appel" || p.channel === "email");
+      if (mode === "visite") r = r.filter((p) => p.channel === "visite" || (!p.channel && WALKIN.has(p.category)));
+      if (mode === "visite_phone") r = r.filter((p) => p.channel === "visite" && p.phone);
+      return clone(r.sort((a, b) => b.score - a.score).slice(0, limit));
+    },
+    async list(status, q, limit = 60) {
+      await wait();
+      const term = cleanSearch(q).toLowerCase();
+      let r = P.filter((p) => !status || status === "tous" || p.status === status);
+      if (term) r = r.filter((p) => [p.name, p.legal_name, p.city, p.phone].some((x) => String(x || "").toLowerCase().includes(term)));
+      if (status === "nouveau") r.sort((a, b) => b.score - a.score);
+      else r.sort((a, b) => String(a.next_action_at || "9").localeCompare(String(b.next_action_at || "9")));
+      return clone(r.slice(0, limit));
+    },
+    async get(id) { await wait(60); return clone(P.find((p) => p.id === id)); },
+    async update(id, patch) { await wait(); const p = P.find((x) => x.id === id); Object.assign(p, patch, { updated_at: new Date().toISOString() }); return clone(p); },
+    async insert(row) { await wait(); const p = mk(row.name, row.category || "manuel", row.naf || null, row.naf_label || "Ajout manuel", null, row.city || "", { lat: row.lat ?? C.lat, lng: row.lng ?? C.lng }, row.score ?? 50, row); p.id = nid(); P.push(p); return clone(p); },
+    async findDuplicate(name, phone) { const n = String(name || "").toLowerCase(); const p = P.find((x) => x.name.toLowerCase() === n || (phone && x.phone === phone)); return p ? clone(p) : null; },
+    async log(row) { await wait(60); const r = { id: nid(), at: new Date().toISOString(), ...row }; I.push(r); return { id: r.id }; },
+    async unlog(id) { const k = I.findIndex((x) => x.id === id); if (k >= 0) I.splice(k, 1); },
+    async history(pid) { await wait(60); return clone(I.filter((i) => i.prospect_id === pid).sort((a, b) => b.at.localeCompare(a.at))); },
+    async activitySince(iso) { await wait(60); return clone(I.filter((i) => i.at >= iso)); },
+    async tenders() { await wait(40); return clone(P.filter((p) => p.source === "marche_public" && notFinal(p))); },
+    async upcomingRdv() { await wait(60); return clone(P.filter((p) => p.status === "rdv").sort((a, b) => a.next_action_at.localeCompare(b.next_action_at))); },
+    async exportAll() { return clone(P); },
+    async fn(action, body = {}) {
+      if (action === "status") { await wait(); return { google: false, demo: true, cap: 30 }; }
+      if (action === "enrich") {
+        await wait(700);
+        const out = [];
+        for (const id of body.ids || []) {
+          const p = P.find((x) => x.id === id); if (!p) continue;
+          const k = P.indexOf(p);
+          if (!p.enriched_at) {
+            p.enriched_at = new Date().toISOString();
+            if (k % 5 !== 3) p.phone = p.phone || `01 99 00 0${k % 10} ${String(20 + k).padStart(2, "0")}`;
+            if (k % 2 === 0) { p.website = "https://www.example.com"; p.email = `contact${k}@example.com`; }
+            p.rating = Math.round((3.6 + (k % 12) / 10) * 10) / 10; p.rating_count = 12 + k * 7;
+            p.opening_hours = ["lundi: 08:00 – 18:00", "mardi: 08:00 – 18:00", "mercredi: 08:00 – 18:00", "jeudi: 08:00 – 18:00", "vendredi: 08:00 – 17:00", "samedi: Fermé", "dimanche: Fermé"];
+          }
+          out.push(clone(p));
+        }
+        return { prospects: out, google: false };
+      }
+      if (action === "osm") { await wait(1200); return { count: 1840, food: 1795, vending: 45 }; }
+      if (action === "rescore") { await wait(600); return { cursor: null, updated: P.length, marked_clients: 0 }; }
+      if (action === "tenders") {
+        await wait(700);
+        if (!P.some((p) => p.source === "marche_public")) {
+          const d = new Date(); d.setDate(d.getDate() + 24);
+          P.push(mk("Commune de Saint-Exemple (exemple)", "public", null, "Appel d'offres public", null, "Saint-Jean-de-Védas", off(0.004, 0.003), 99, {
+            source: "marche_public", status: "a_relancer", channel: "email", next_action: "Répondre à l'appel d'offres", next_action_at: addDays(17),
+            website: "https://www.boamp.fr", notes: "Installation et gestion de distributeurs automatiques de boissons chaudes, fraîches et de snacks (exemple fictif)",
+            potential: "Marché public", contact_hint: "Télécharger le dossier de consultation et répondre avant la date limite",
+            score_parts: { volume: 80, isolement: 50, moment: 100, acces: 80, affinite: 60 },
+            score_reasons: ["Appel d'offres en cours : l'acheteur cherche un prestataire", "Installation et gestion de distributeurs automatiques (exemple fictif)", `Date limite de réponse : ${d.toLocaleDateString("fr-FR")}`],
+            enriched_at: new Date().toISOString(),
+          }));
+          return { found: 1, inserted: 1 };
+        }
+        return { found: 1, inserted: 0 };
+      }
+      if (action === "learn_clients") { await wait(900); return { found: (body.names || []).map((n) => ({ name: n, naf: null })), missing: [] }; }
+      if (action === "harvest") {
+        await wait(900);
+        const g = (body.cursor?.g ?? 0) + 4;
+        if (g < 21) return { cursor: { g, page: 1 }, inserted: 0, progress: { group: g, groups: 21, label: ["Transport & logistique", "Clients en attente", "Industrie", "Dépôts & BTP", "Bureaux"][Math.min(4, Math.floor(g / 4))] } };
+        if (!extraAdded) {
+          extraAdded = true;
+          P.push(mk("Ambulances du Lez (exemple)", "sante", "86.90A", "Ambulances", "11", "Lattes", off(-0.02, 0.05), 62));
+          P.push(mk("Imprimerie Védasienne (exemple)", "industrie", "18.12Z", "Imprimerie", "11", "Saint-Jean-de-Védas", off(-0.008, -0.006), 57));
+          P.push(mk("Auto-Moto Atelier (exemple)", "attente", "45.40Z", "Concession et atelier moto", "02", "Lavérune", off(0.01, -0.03), 44));
+        }
+        return { cursor: null, inserted: 3, progress: { group: 21, groups: 21, label: "Terminé" } };
+      }
+      throw new Error("Action inconnue");
+    },
+  };
+}
+
+const api = DEMO ? demoApi() : remoteApi();
+
+/* =====================================================================
+   6. État et rendu
+   ===================================================================== */
+const S = {
+  view: "home", user: null, settings: null,
+  minutes: 30,
+  home: null,
+  session: null,
+  fiche: null,
+  list: { status: "nouveau", q: "", rows: null, counts: null },
+  tour: null,
+  ctx: {},           // type de contact choisi sur une fiche (appel / email / visite)
+  googleOn: null,
+  harvesting: null,  // progression de la recherche d'entreprises
+  error: null,
+  undo: null,
+};
+let renderGen = 0;
+const FOCUS = new Set(["session", "visit"]);
+
+function mergeSettings(v) {
+  return { ...DEFAULTS, ...(v || {}), center: { ...DEFAULTS.center, ...(v?.center || {}) }, delays: { ...DEFAULTS.delays, ...(v?.delays || {}) } };
+}
+
+function perContact() { return Math.max(2, Number(S.settings?.minutesPerContact) || 4); }
+function contactsFor(minutes) { return Math.max(2, Math.round(minutes / perContact())); }
+
+function setNav() {
+  const v = S.view === "fiche" ? (S.backTo || "list") : S.view;
+  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-current", t.dataset.v === v ? "page" : "false"));
+}
+
+function render() {
+  const v = $("#view");
+  const views = { login: vLogin, home: vHome, session: vSession, visit: vVisit, list: vList, fiche: vFiche, tour: vTour, settings: vSettings };
+  // garder ce qui est en cours de saisie quand le même écran se redessine
+  const a = document.activeElement;
+  const keep = a && a.id && v.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)
+    ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null;
+  const typed = {};
+  if (render.lastView === S.view && !render.reset) {
+    v.querySelectorAll("input[id], textarea[id], select[id]").forEach((el) => {
+      if (el.dataset.typed) typed[el.id] = el.type === "checkbox" ? el.checked : el.value;
+    });
+  }
+  render.lastView = S.view; render.reset = false;
+
+  $("#topbar").innerHTML = topbarHTML();
+  v.className = FOCUS.has(S.view) || S.view === "fiche" ? "focus-mode" : "";
+  v.innerHTML = (views[S.view] || vHome)();
+  const dock = $("#dock");
+  const d = dockFor();
+  dock.innerHTML = d; dock.hidden = !d;
+  $("#tabbar").hidden = S.view === "login" || FOCUS.has(S.view);
+  setNav();
+  requestAnimationFrame(() => {
+    const h = dock.hidden ? 0 : dock.offsetHeight - 80;
+    document.documentElement.style.setProperty("--dock-h", h + "px");
+  });
+
+  for (const [id, val] of Object.entries(typed)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.type === "checkbox") el.checked = val; else el.value = val;
+    el.dataset.typed = "1";
+  }
+  if (keep) {
+    const el = document.getElementById(keep.id);
+    if (el) { el.focus(); try { if (keep.s != null) el.setSelectionRange(keep.s, keep.e); } catch (_) { /* champ sans curseur */ } }
+  }
+}
+
+function go(view, opts = {}) {
+  S.view = view; S.ctx = {};
+  if (opts.backTo) S.backTo = opts.backTo;
+  closeSheet();
+  window.scrollTo(0, 0);
+  render();
+  const loaders = { home: loadHome, list: loadList, settings: loadSettingsView };
+  loaders[view]?.();
+}
+
+/* ---------- barre du haut selon l'écran ---------- */
+function topbarHTML() {
+  const brand = `<div class="brand"><div class="brand-mark" aria-hidden="true">${ICON.machine}</div><div class="brand-name">${esc(CFG.ORG_NAME || S.settings?.company || "Prospection")}</div></div>${DEMO ? '<span class="demo-tag">Démo</span>' : ""}`;
+  const wrap = (x) => `<div class="topbar-in">${x}</div>`;
+  if (S.view === "session") {
+    const s = S.session;
+    if (!s || s.loading || s.error || !s.queue.length || s.i >= s.queue.length) return wrap(`<span class="title">Session</span>`);
+    return wrap(`<button class="back" data-act="endSession">${ICON.x}Terminer</button><span class="title">Contact ${s.i + 1} sur ${s.queue.length}</span><button class="end" data-act="skip">Passer</button>`);
+  }
+  if (S.view === "visit") {
+    const T = S.tour, k = T.stops.findIndex((p) => p.id === T.current);
+    return wrap(`<button class="back" data-act="backTour">${ICON.back}Tournée</button><span class="title">Arrêt ${k + 1} sur ${T.stops.length}</span><span class="end" aria-hidden="true"></span>`);
+  }
+  if (S.view === "fiche") {
+    const label = { list: "Prospects", home: "Accueil", tour: "Tournée" }[S.backTo] || "Retour";
+    return wrap(`<button class="back" data-act="nav" data-v="${esc(S.backTo || "list")}">${ICON.back}${label}</button><span class="title"></span><span class="end" aria-hidden="true"></span>`);
+  }
+  return wrap(brand);
+}
+
+/* ---------- petits gabarits ---------- */
+const STAMP = {
+  nouveau: ["new", "dot"], a_relancer: ["wait", "redo"], rdv: ["go", "cal"], client: ["go", "star"],
+  equipe_ailleurs: ["closed", "minus"], perdu: ["closed", "minus"], froid: ["closed", "minus"], ferme: ["closed", "minus"], ne_plus_contacter: ["stop", "x"],
+};
+function stamp(status, text) {
+  const [tone, ic] = STAMP[status] || STAMP.nouveau;
+  return `<span class="stamp ${tone}">${ICON[ic]}${esc(text || STATUS[status]?.label || "")}</span>`;
+}
+function toneOf(status) { return (STAMP[status] || STAMP.nouveau)[0]; }
+function loadingBlock(text = "Chargement…") { return `<div class="row"><span class="spin"></span><span class="sub">${esc(text)}</span></div>`; }
+function errorBlock(msg) { return `<div class="err" role="alert">${esc(msg)}</div>`; }
+function nextLine(p) {
+  if (!p.next_action_at) return "";
+  const late = dayDiff(p.next_action_at) < 0;
+  const when = p.status === "rdv" ? fmtDay(p.next_action_at, true) : fmtRel(p.next_action_at);
+  return `<p class="next${late ? " late" : ""}">${ICON.cal}<span><b>${esc(p.next_action || "À faire")}</b> · ${esc(when)}</span></p>`;
+}
+
+/* Progression d'une session ou d'une tournée : une barre et des mots, rien à deviner */
+function progressHTML(done, total, label, counts = []) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const parts = counts.filter(([n]) => n > 0).map(([n, one, many, tone]) => `<span class="pc ${tone || ""}"><b class="num">${n}</b> ${n > 1 ? many : one}</span>`);
+  return `<div class="progress">
+    <div class="pg-top"><span><b class="num">${done}</b> ${esc(label)} sur <b class="num">${total}</b></span>${parts.length ? `<span class="pg-counts">${parts.join("")}</span>` : ""}</div>
+    <div class="meter" role="progressbar" aria-label="Avancement" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+function sessionCounts(res) {
+  const r = res.filter((x) => x && !x.skip);
+  return [
+    [r.filter((x) => x.outcome === "RDV pris" || x.outcome === "Signé").length, "rendez-vous", "rendez-vous", "go"],
+    [r.filter((x) => x.tone === "wait").length, "à relancer", "à relancer", "wait"],
+    [r.filter((x) => x.tone === "closed").length, "clos", "clos", ""],
+  ];
+}
+
+/* « Pourquoi lui » : ce qu'on peut installer, qui demander, et le détail de la note */
+const PARTS = [
+  ["volume", "Monde sur place", "Salariés et visiteurs présents chaque jour"],
+  ["isolement", "Peu d'alternatives autour", "Pas de café, boulangerie ou supérette à deux pas"],
+  ["moment", "Bon moment", "Installation récente, recrutement, déménagement"],
+  ["acces", "Décision accessible", "Décision prise sur place plutôt qu'au siège"],
+  ["affinite", "Proche de vos clients", "Ressemble à vos clients ou se trouve près d'eux"],
+];
+function whyHTML(p, where) {
+  const reasons = Array.isArray(p.score_reasons) ? p.score_reasons : [];
+  const parts = p.score_parts && Object.keys(p.score_parts).length ? p.score_parts : null;
+  if (!reasons.length && !parts && !p.potential) return "";
+  const tender = p.source === "marche_public";
+  const pos = reasons.filter((r) => !/^Attention/.test(r)), neg = reasons.filter((r) => /^Attention/.test(r));
+  const bars = parts ? `<details class="more"${where === "fiche" ? " open" : ""}><summary>Détail de la note ${p.score ?? ""}/100</summary><div class="body"><ul class="bars">${PARTS.map(([k, t, d]) => {
+    const v = Math.max(0, Math.min(100, Math.round(parts[k] ?? 0)));
+    return `<li><span class="bt"><b>${t}</b><small>${d}</small></span><span class="bm" aria-hidden="true"><i class="${v >= 70 ? "hi" : v < 35 ? "lo" : ""}" style="width:${v}%"></i></span><span class="bv num">${v}</span></li>`;
+  }).join("")}</ul><p class="meta">Chaque critère est noté sur 100. La note finale les combine, le monde sur place comptant le plus.</p></div></details>` : "";
+  return `<section class="why-box" aria-labelledby="why-${esc(p.id)}">
+    <h2 class="label" id="why-${esc(p.id)}">Pourquoi ${tender ? "cet appel d'offres" : "ce prospect"}</h2>
+    ${p.potential || p.people_est ? `<div class="pot">${p.potential ? `<p class="pot-v">${esc(p.potential)}</p>` : ""}${p.people_est && !tender ? `<p class="pot-p">≈ <b class="num">${p.people_est}</b> ${p.people_est > 1 ? "personnes" : "personne"} sur place chaque jour</p>` : ""}</div>` : ""}
+    ${p.contact_hint ? `<p class="askfor">${ICON.user}<span><b>${tender ? "À faire" : "À demander"} :</b> ${esc(p.contact_hint)}</span></p>` : ""}
+    ${pos.length || neg.length ? `<ul class="why">${pos.map((r) => `<li>${esc(r)}</li>`).join("")}${neg.map((r) => `<li class="warn">${esc(r)}</li>`).join("")}</ul>` : ""}
+    ${bars}
+  </section>`;
+}
+
+/* =====================================================================
+   7. Connexion
+   ===================================================================== */
+function vLogin() {
+  return `
+  <div class="login">
+    <div class="greet"><p class="label">Connexion</p><h1>Bonjour</h1><p class="sub">Entrez l'e-mail et le mot de passe que l'on vous a donnés. Vous resterez connecté sur cet appareil.</p></div>
+    <form class="panel" id="login-form" data-form="login">
+      <label class="field" for="login-email">E-mail<input type="email" id="login-email" autocomplete="username" inputmode="email" required></label>
+      <label class="field" for="login-pass">Mot de passe<input type="password" id="login-pass" autocomplete="current-password" required></label>
+      ${S.error ? errorBlock(S.error) : ""}
+      <button class="btn primary big block" type="submit">Se connecter</button>
+    </form>
+  </div>`;
+}
+
+/* =====================================================================
+   8. Accueil
+   ===================================================================== */
+async function loadHome() {
+  const gen = ++renderGen;
+  try {
+    const [due, rdv, act, total, freshAll, tenders] = await Promise.all([api.due(endOfToday()), api.upcomingRdv(), api.activitySince(startOfWeek()), api.count(), api.fresh(20, [], "remote"), api.tenders()]);
+    const fresh = freshAll.filter((p) => p.channel || !(WALKIN.has(p.category) && p.naf !== "96.01B"));
+    if (gen !== renderGen || S.view !== "home") return;
+    const remote = due.filter((p) => p.status !== "rdv" && channelOf(p) !== "visite" && p.source !== "marche_public");
+    const visits = due.filter((p) => p.status !== "rdv" && channelOf(p) === "visite");
+    const contacts = act.filter((a) => ["appel", "visite", "email"].includes(a.kind)).length;
+    const rdvWeek = act.filter((a) => a.outcome === "RDV pris").length;
+    const won = act.filter((a) => a.outcome === "Signé").length;
+    S.home = { remote, visits, rdv, contacts, rdvWeek, won, total, fresh, tenders };
+  } catch (e) { S.home = { error: e.message }; }
+  if (!loadHome.tendersTried) { loadHome.tendersTried = true; refreshTenders().then((added) => { if (added && S.view === "home") loadHome(); }); }
+  if (S.view === "home") render();
+}
+
+function vHome() {
+  const h = S.home;
+  const n = contactsFor(S.minutes);
+  const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const name = (S.settings?.sender || "").split(" ")[0];
+  const due = h?.remote?.length ?? 0;
+  const fromDue = Math.min(due, n);
+  const rdvNext = h?.rdv?.[0];
+  const harvestInfo = S.settings?.harvest;
+  const fresh = (h?.fresh || []).slice(0, Math.max(0, n - fromDue));
+  const plan = [...(h?.remote || []).slice(0, fromDue).map((p) => ({ p, due: true })), ...fresh.map((p) => ({ p, due: false }))];
+  const shown = plan.slice(0, 4), rest = plan.length - shown.length;
+  const nNew = Math.max(0, n - fromDue);
+  const planSentence = !h ? "" : `${fromDue ? `${plural(fromDue, "relance prévue", "relances prévues")} + ` : ""}${plural(nNew, "nouveau prospect", "nouveaux prospects")}, ${fromDue ? "puis " : ""}les mieux notés de votre zone.`;
+  const planHTML = !h ? "" : `
+      <ol class="plan" aria-label="Contacts au programme">
+        ${shown.map(({ p, due }) => `<li><span class="pk ${due ? "due" : ""}">${due ? "Relance" : p.source === "marche_public" ? "Appel d'offres" : `${p.score ?? "–"}<small>/100</small>`}</span><span class="pn"><b>${esc(p.name)}</b><small>${esc(due ? (p.next_action || "À relancer") : (p.potential || CAT[p.category] || ""))}${p.city ? ` · ${esc(p.city)}` : ""}</small></span></li>`).join("")}
+        ${rest > 0 ? `<li class="more-l">et ${plural(rest, "autre", "autres")} ${fresh.length + fromDue < n ? "(trouvés au lancement)" : ""}</li>` : ""}
+        ${!shown.length ? `<li class="more-l">Les prospects seront recherchés au lancement (une minute la première fois).</li>` : ""}
+      </ol>`;
+  const row = (act, v, status, icon, hot, title, desc, count) => `
+    <button class="agenda-row" data-act="${act}" data-v="${v}"${status ? ` data-status="${status}"` : ""}>
+      <span class="ic${hot ? " hot" : ""}">${icon}</span>
+      <span><span class="t">${title}</span><span class="d">${desc}</span></span>
+      <span class="c num">${h ? count : "–"}</span>${ICON.chevron}
+    </button>`;
+  return `
+  <div class="greet"><p class="label">${esc(today)}</p><h1>Bonjour${name ? " " + esc(name) : ""}</h1></div>
+  ${DEMO ? `<p class="notice"><b>Démonstration.</b> Entreprises fictives. Une fois Supabase configuré, l'outil utilise le registre officiel des entreprises.</p>` : ""}
+  ${h?.error ? errorBlock(h.error) : ""}
+
+  ${(h?.tenders || []).map((p) => `
+  <button class="tender" data-act="open" data-id="${esc(p.id)}">
+    <span class="label">Appel d'offres public</span>
+    <b>${esc(p.name)}</b>
+    <span class="sub">${esc(((t) => t.length > 120 ? t.slice(0, 117).replace(/\s+\S*$/, "") + "…" : t)(p.notes || "Distributeurs automatiques"))}${p.next_action_at ? ` · à préparer avant le ${esc(fmtDay(p.next_action_at))}` : ""}</span>
+  </button>`).join("")}
+  <section class="launch" aria-labelledby="launch-q">
+    <h2 class="q" id="launch-q">Combien de temps avez-vous ?</h2>
+    <div class="seg" role="group" aria-label="Durée de la session">
+      ${[15, 30, 45, 60].map((m) => `<button data-act="minutes" data-v="${m}" aria-pressed="${S.minutes === m}">${m} min</button>`).join("")}
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="yield"><b>${n}</b><span>appels ou e-mails au programme${planSentence ? `<small>${planSentence}</small>` : ""}</span></p>
+      ${planHTML}
+    </div>
+    <button class="btn primary big block" data-act="startSession">${ICON.phone}Commencer la session</button>
+  </section>
+
+  <section class="stack" aria-labelledby="today-l">
+    <h2 class="label" id="today-l">Aujourd'hui</h2>
+    <div class="agenda">
+      ${row("nav", "list", "a_relancer", ICON.redo, due > 0, "Relances", "Appels et e-mails prévus", due)}
+      ${row("nav", "tour", "", ICON.pin, (h?.visits?.length || 0) > 0, "Visites", "À faire pendant une tournée", h?.visits?.length ?? 0)}
+      ${row("nav", "list", "rdv", ICON.cal, false, "Rendez-vous", rdvNext ? `${esc(fmtDay(rdvNext.next_action_at, true))} · ${esc(rdvNext.name)}` : "Aucun de prévu", h?.rdv?.length ?? 0)}
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="week-l">
+    <h2 class="label" id="week-l">Cette semaine</h2>
+    <div class="tally">
+      <div><b>${h ? h.contacts : "–"}</b><span>contacts</span></div>
+      <div><b>${h ? h.rdvWeek : "–"}</b><span>rendez-vous</span></div>
+      <div><b>${h ? h.won : "–"}</b><span>${h?.won === 1 ? "client signé" : "clients signés"}</span></div>
+    </div>
+  </section>
+
+  <p class="meta">${h ? (h.total ? `${plural(h.total, "entreprise", "entreprises")} dans un rayon de ${S.settings.radius} km autour de ${esc(S.settings.center.label)}` : "Base vide : elle se remplit au lancement de la première session.") : ""}${harvestInfo?.done_at ? ` · mise à jour le ${esc(fmtDay(harvestInfo.done_at))}` : ""}</p>`;
+}
+
+/* =====================================================================
+   9. Recherche d'entreprises (remplissage de la base)
+   ===================================================================== */
+const centerKey = (s) => `${s.center.lat},${s.center.lng},${s.radius}`;
+
+// Carte des commerces de bouche autour du point de départ (une fois par zone)
+async function ensureMap(onProgress) {
+  const s = S.settings;
+  if (s.osm?.key === centerKey(s)) return false;
+  S.harvesting = { label: "Carte des cafés et commerces autour de vous", group: 0, groups: 1 };
+  onProgress?.(S.harvesting);
+  const r = await api.fn("osm", { center: { lat: s.center.lat, lng: s.center.lng }, radius: s.radius });
+  s.osm = { key: centerKey(s), at: new Date().toISOString(), count: r.count };
+  await api.saveSettings(s);
+  return true;
+}
+
+// Appels d'offres publics : vérifiés au plus une fois par jour, sans bloquer
+async function refreshTenders() {
+  const s = S.settings;
+  if (s.tenders?.at && dayDiff(s.tenders.at) === 0) return false;
+  try {
+    const r = await api.fn("tenders", { departements: [s.departement || "34"] });
+    s.tenders = { at: new Date().toISOString(), found: r.found };
+    await api.saveSettings(s);
+    return (r.inserted || 0) > 0;
+  } catch (_) { return false; /* source indisponible : on réessaiera */ }
+}
+
+// Recalcule toutes les notes avec la carte, les clients et les résultats
+async function rescoreAll(onProgress) {
+  let cursor = null, n = 0;
+  do {
+    S.harvesting = { label: `Recalcul des notes (${n} prospects)`, group: 0, groups: 1 };
+    onProgress?.(S.harvesting);
+    const r = await api.fn("rescore", { cursor });
+    n += r.updated || 0; cursor = r.cursor;
+  } while (cursor);
+  S.settings.rescored_at = new Date().toISOString();
+  await api.saveSettings(S.settings);
+  S.harvesting = null;
+  return n;
+}
+
+// Mise à jour complète : carte → registre → marchés publics → notes
+async function fullUpdate(onProgress) {
+  const mapChanged = await ensureMap(onProgress);
+  const n = await runHarvest({ onProgress });
+  await refreshTenders();
+  if (mapChanged) await rescoreAll(onProgress);
+  S.harvesting = null;
+  return n;
+}
+
+async function runHarvest({ untilPool = 0, onProgress } = {}) {
+  const s = S.settings;
+  S.harvesting = { label: "Démarrage", group: 0, groups: 21 };
+  onProgress?.(S.harvesting, 0);
+  let cursor = s.harvest?.cursor ?? null;
+  const restart = !cursor || s.harvest?.center_key !== `${s.center.lat},${s.center.lng},${s.radius}`;
+  if (restart) cursor = { g: 0, page: 1 };
+  let inserted = 0;
+  while (cursor) {
+    const res = await api.fn("harvest", { cursor, center: { lat: s.center.lat, lng: s.center.lng }, radius: s.radius });
+    inserted += res.inserted || 0;
+    cursor = res.cursor;
+    S.harvesting = res.progress;
+    onProgress?.(res.progress, inserted);
+    s.harvest = { cursor, center_key: `${s.center.lat},${s.center.lng},${s.radius}`, done_at: cursor ? s.harvest?.done_at || null : new Date().toISOString() };
+    await api.saveSettings(s);
+    if (untilPool && cursor) {
+      const pool = await api.fresh(untilPool, [], "remote");
+      if (pool.length >= untilPool) break;
+    }
+  }
+  S.harvesting = null;
+  return inserted;
+}
+
+/* =====================================================================
+   10. Session d'appels
+   ===================================================================== */
+async function startSession() {
+  const n = contactsFor(S.minutes);
+  S.session = { minutes: S.minutes, n, queue: [], i: 0, res: [], loading: true, step: 0, startedAt: Date.now(), msg: "" };
+  S.backTo = "home";
+  go("session", { backTo: "home" });
+  const step = (k, msg) => { S.session.step = k; if (msg) S.session.msg = msg; if (S.view === "session") render(); };
+  try {
+    step(0);
+    const due = (await api.due(endOfToday())).filter((p) => p.status !== "rdv" && channelOf(p) !== "visite" && p.source !== "marche_public").slice(0, n);
+    const queue = [...due];
+    const exclude = queue.map((p) => p.id);
+    step(1);
+    let pool = await api.fresh(n * 3, exclude, "remote");
+    const h = S.settings.harvest;
+    const stale = !h?.done_at || h.cursor || dayDiff(h.done_at) < -30;
+    if (pool.length < n * 2 && stale) {
+      step(1, "Lecture de la carte des commerces autour de vous…");
+      await ensureMap();
+      step(1, "Recherche de nouvelles entreprises dans le registre officiel…");
+      await runHarvest({ untilPool: n * 3, onProgress: (pr) => step(1, `Recherche dans le registre : ${pr.label}…`) });
+      pool = await api.fresh(n * 3, exclude, "remote");
+    }
+    step(2, "");
+    let rounds = 0;
+    while (queue.length < n && pool.length && rounds < 5) {
+      rounds++;
+      // les commerces à visiter n'ont pas besoin de recherche Google ici : ils partent en tournée
+      const walk = pool.filter((p) => !p.channel && initialChannel(p) === "visite" && WALKIN.has(p.category) && p.naf !== "96.01B");
+      for (const p of walk) { await api.update(p.id, { channel: "visite" }); exclude.push(p.id); }
+      pool = pool.filter((p) => !walk.includes(p));
+      if (!pool.length) { pool = await api.fresh(n * 2, exclude, "remote"); continue; }
+      const need = n - queue.length;
+      const batch = pool.splice(0, Math.min(8, need + 2));
+      const toEnrich = batch.filter((p) => !p.enriched_at).map((p) => p.id);
+      let enriched = batch;
+      if (toEnrich.length) {
+        const res = await api.fn("enrich", { ids: toEnrich });
+        const byId = Object.fromEntries((res.prospects || []).map((p) => [p.id, p]));
+        enriched = batch.map((p) => byId[p.id] || p);
+        if (res.google === false) S.googleOn = false;
+      }
+      for (const p of enriched) {
+        if (p.status === "ferme") continue;
+        const ch = initialChannel(p);
+        if (p.channel !== ch) { await api.update(p.id, { channel: ch }); p.channel = ch; }
+        if (ch !== "visite" && queue.length < n) queue.push(p);
+        exclude.push(p.id);
+      }
+      if (!pool.length && queue.length < n) pool = await api.fresh(n * 2, exclude, "remote");
+    }
+    if (queue.length < n) {
+      const extra = await api.fresh(n - queue.length, exclude, "visite_phone");
+      for (const p of extra) { p._phoneInstead = true; queue.push(p); }
+    }
+    S.session.queue = queue;
+    S.session.loading = false;
+  } catch (e) {
+    S.session.loading = false;
+    S.session.error = e.message;
+  }
+  if (S.view === "session") { render(); prefetchHistory(); }
+}
+
+function vSession() {
+  const s = S.session;
+  if (!s) return vHome();
+  if (s.loading) {
+    const steps = ["Relances prévues aujourd'hui", "Sélection des meilleurs prospects", "Recherche des téléphones et e-mails"];
+    return `
+    <div class="greet"><p class="label">Préparation</p><h1>Je prépare votre session</h1></div>
+    ${progressHTML(0, s.n, "contact prêt")}
+    <ul class="steps">${steps.map((t, k) => `<li class="${k < s.step ? "ok" : k === s.step ? "on" : ""}">${k === s.step ? '<span class="spin"></span>' : `<span class="dot">${k < s.step ? ICON.check : ""}</span>`}${esc(t)}</li>`).join("")}</ul>
+    ${s.msg ? `<p class="meta">${esc(s.msg)}</p>` : ""}`;
+  }
+  if (s.error) return `<div class="greet"><h1>La session n'a pas pu démarrer</h1></div>${errorBlock(s.error)}<button class="btn primary big block" data-act="nav" data-v="home">Retour à l'accueil</button>`;
+  if (!s.queue.length) {
+    return `<div class="greet"><p class="label">Session</p><h1>Rien à appeler pour l'instant</h1><p class="sub">Aucune relance prévue et aucun nouveau prospect joignable par téléphone ou e-mail. Les prospects restants sont à visiter.</p></div>
+    <button class="btn primary big block" data-act="nav" data-v="tour">${ICON.pin}Préparer une tournée</button>
+    <button class="btn block" data-act="nav" data-v="home">Accueil</button>`;
+  }
+  if (s.i >= s.queue.length) return vSessionEnd();
+  return `${progressHTML(s.i, s.queue.length, s.i > 1 ? "contacts traités" : "contact traité", sessionCounts(s.res))}${focusHTML(s.queue[s.i], "session")}`;
+}
+
+function vSessionEnd() {
+  const s = S.session;
+  const res = s.res.filter((r) => r && !r.skip);
+  const rdv = res.filter((r) => r.outcome === "RDV pris").length, won = res.filter((r) => r.outcome === "Signé").length;
+  return `
+  <div class="greet"><p class="label">Feuille de passage</p><h1>${won ? "Nouveau client signé" : "Session terminée"}</h1>
+    <p class="sub">${plural(res.length, "contact traité", "contacts traités")} · ${plural(rdv, "rendez-vous", "rendez-vous")}${won ? ` · ${plural(won, "signé", "signés")}` : ""}</p></div>
+  ${progressHTML(res.length, s.queue.length, res.length > 1 ? "contacts traités" : "contact traité", sessionCounts(s.res))}
+  ${s.res.some(Boolean) ? `<div class="rows">${s.res.map((r) => r ? `
+    <div class="prow" style="cursor:default">
+      <span class="n">${esc(r.name)}</span><span class="r">${r.skip ? stamp("froid", "Passé") : stamp(r.status, r.outcome)}</span>
+      ${r.next ? `<span class="m">${esc(r.next)}</span>` : ""}
+    </div>` : "").join("")}</div>` : ""}
+  <p class="meta">Les relances sont programmées : elles reviendront d'elles-mêmes dans vos prochaines sessions.</p>
+  <button class="btn primary big block" data-act="nav" data-v="home">Retour à l'accueil</button>`;
+}
+
+/* =====================================================================
+   11. Vue prospect (session, visite, fiche) et barre de résultats
+   ===================================================================== */
+function ctxOf(p, where) {
+  if (where === "visit") return "visite";
+  if (where === "fiche" && S.ctx[p.id]) return S.ctx[p.id];
+  if (p.status === "rdv") return "rdv";
+  const ch = channelOf(p);
+  if (where === "session" && ch === "visite") return "appel";
+  return ch;
+}
+
+function primaryAct(p, ctx) {
+  const why = (label, text) => `<p class="method-why"><span><b>${label}</b> ${esc(text)}</span></p>`;
+  const bar = (href, icon, value, small, go, ext) => `
+    <a class="callbar" href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>
+      <span class="ic">${icon}</span><span class="v"><b>${esc(value)}</b>${small ? `<small>${esc(small)}</small>` : ""}</span><span class="go">${go}</span>
+    </a>`;
+  if (p.source === "marche_public" && p.website) {
+    return `<div class="primary-act">${bar(p.website, ICON.globe, "Voir l'appel d'offres", p.next_action_at ? `À préparer avant le ${fmtDay(p.next_action_at)}` : "Dossier en ligne", "Ouvrir", true)}${why("Marché public :", "l'acheteur cherche déjà un prestataire. Téléchargez le dossier et répondez dans les délais.")}</div>`;
+  }
+  if (ctx === "email") {
+    const m = emailOf(p, S.settings);
+    return `<div class="primary-act">${p.email ? bar(m.href, ICON.mail, p.email, "E-mail prêt à envoyer", "Ouvrir") : noContact(p, "email")}${why("E-mail :", channelWhy(p, "email"))}</div>`;
+  }
+  if (ctx === "visite") {
+    return `<div class="primary-act">${bar(mapsDir(p), ICON.pin, "Itinéraire", p.address || p.city || "", "Y aller", true)}${why("Visite :", channelWhy(p, "visite"))}</div>`;
+  }
+  const rdv = ctx === "rdv";
+  const body = phoneOk(p) ? bar(phoneHref(p.phone), ICON.phone, p.phone, rdv ? `RDV ${fmtDay(p.next_action_at, true)}` : "Toucher pour appeler", "Appeler") : noContact(p, "phone");
+  let text = channelWhy(p, "appel");
+  if (p._phoneInstead) text = "Idéalement à visiter, mais un appel peut suffire pour obtenir un rendez-vous.";
+  return `<div class="primary-act">${body}${rdv ? "" : why("Appel :", text)}</div>`;
+}
+
+function noContact(p, kind) {
+  const id = esc(p.id);
+  if (kind === "email") return `<div class="nophone"><p><b>Pas d'adresse e-mail.</b> Ajoutez-la depuis la fiche, ou copiez le texte ci-dessous.</p></div>`;
+  return `<div class="nophone">
+    <p><b>${p.phone_status === "invalide" ? "Numéro invalide." : p.enriched_at ? "Numéro introuvable." : "Numéro pas encore recherché."}</b> Cherchez-le, puis enregistrez-le ici.</p>
+    <a class="btn block" href="${esc(googleSearch(p))}" target="_blank" rel="noopener">${ICON.search}Chercher le numéro</a>
+    <div class="row" style="flex-wrap:nowrap"><label class="sr" for="phone-${id}">Numéro de téléphone</label><input type="tel" id="phone-${id}" inputmode="tel" placeholder="04 67 …" style="flex:1;min-width:0"><button class="btn primary" data-act="savePhone" data-id="${id}">Enregistrer</button></div>
+  </div>`;
+}
+
+function factsHTML(p, ctx) {
+  const rows = [];
+  const copyBtn = (v, what) => `<button class="btn quiet" data-act="copy" data-v="${esc(v)}" aria-label="Copier ${what}">${ICON.copy}</button>`;
+  if (ctx !== "appel" && ctx !== "rdv" && phoneOk(p)) rows.push(`<div class="fact">${ICON.phone}<div class="v"><a href="${esc(phoneHref(p.phone))}">${esc(p.phone)}</a></div><div class="acts">${copyBtn(p.phone, "le numéro")}</div></div>`);
+  if (p.email && ctx !== "email") rows.push(`<div class="fact">${ICON.mail}<div class="v"><a href="mailto:${esc(p.email)}">${esc(p.email)}</a></div><div class="acts">${copyBtn(p.email, "l'adresse e-mail")}</div></div>`);
+  if (ctx !== "visite") rows.push(`<div class="fact">${ICON.pin}<div class="v">${esc(p.address || p.city || "Adresse inconnue")}${p.distance_km != null ? `<small>${esc(km(p.distance_km))} du point de départ</small>` : ""}</div><div class="acts"><a class="btn quiet" href="${esc(mapsDir(p))}" target="_blank" rel="noopener">Itinéraire</a></div></div>`);
+  if (p.website || p.maps_url) {
+    rows.push(`<div class="fact">${ICON.globe}<div class="v">${p.website ? `<a href="${esc(p.website)}" target="_blank" rel="noopener">Site web</a>` : ""}${p.website && p.maps_url ? " · " : ""}${p.maps_url ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">Fiche Google</a>` : ""}${p.rating ? `<small>Note Google ${esc(String(p.rating).replace(".", ","))} / 5 · ${esc(p.rating_count || 0)} avis</small>` : ""}</div><div></div></div>`);
+  }
+  if (Array.isArray(p.opening_hours) && p.opening_hours.length) {
+    const idx = (new Date().getDay() + 6) % 7;
+    const today = (p.opening_hours[idx] || "").replace(/^[^:]+:\s*/, "");
+    rows.push(`<div class="fact">${ICON.clock}<div class="v"><details><summary>Aujourd'hui : ${esc(today)}</summary><p class="meta" style="margin-top:6px">${p.opening_hours.map(esc).join("<br>")}</p></details></div><div></div></div>`);
+  }
+  return rows.length ? `<div class="facts">${rows.join("")}</div>` : "";
+}
+
+function scriptHTML(p, ctx) {
+  const s = S.settings;
+  if (ctx === "email") {
+    const m = emailOf(p, s);
+    return `<details class="more" open><summary>Texte de l'e-mail</summary><div class="body">
+      <div class="mail"><b>Objet : ${esc(m.subject)}</b>\n\n${esc(m.body)}</div>
+      <button class="btn" data-act="copyMail" data-id="${esc(p.id)}">${ICON.copy}Copier le texte</button>
+    </div></details>`;
+  }
+  const sc = scriptOf(p, s);
+  const opener = ctx === "visite"
+    ? `Bonjour, ${s.sender || "[votre prénom]"} de ${s.company || "[votre entreprise]"}. Je passais dans le quartier : qui s'occupe du café et de la salle de pause ici ?`
+    : sc.opener;
+  return `
+  <section class="opener" aria-label="Phrase d'accroche"><p class="label">${ctx === "visite" ? "En arrivant" : "Au téléphone"}</p><p>${esc(opener)}</p></section>
+  <div>
+    <details class="more"><summary>Suite du script</summary><div class="body">
+      <div class="say"><span class="label">Pourquoi chez vous</span><span>${esc(sc.pitch)}</span></div>
+      <div class="say"><span class="label">L'offre</span><span>${esc(sc.offer)}</span></div>
+      <div class="say"><span class="label">Questions à poser</span><span>${sc.questions.map(esc).join("<br>")}</span></div>
+      <div class="say"><span class="label">Pour conclure</span><span>${esc(sc.close)}</span></div>
+    </div></details>
+    <details class="more"><summary>Si on me répond…</summary><div class="body">
+      ${sc.objections.map(([q, a]) => `<div class="obj"><q>${esc(q)}</q><span class="sub">${esc(a)}</span></div>`).join("")}
+    </div></details>
+  </div>`;
+}
+
+function focusHTML(p, where) {
+  const ctx = ctxOf(p, where);
+  const legal = [p.legal_name && p.legal_name.toLowerCase() !== String(p.name).toLowerCase() ? p.legal_name : null, p.naf_label].filter(Boolean).join(" · ");
+  const pid = esc(p.id);
+  return `
+  <article class="stack" style="gap:24px" aria-labelledby="pname-${pid}">
+    <header class="p-head">
+      <div class="p-kicker"><span class="cat">${esc(CAT[p.category] || "Prospect")}</span>${p.headcount_label ? `<span>${esc(p.headcount_label)}</span>` : ""}${p.distance_km != null ? `<span>${esc(km(p.distance_km))}</span>` : ""}${p.score != null ? `<span class="score">${p.score}<small>/100</small></span>` : ""}${p.status !== "nouveau" || where === "fiche" ? stamp(p.status) : ""}</div>
+      <h1 id="pname-${pid}">${esc(p.name)}</h1>
+      ${legal ? `<p class="p-legal">${esc(legal)}${p.network_size > 1 ? ` · ${esc(p.network_size)} sites en France` : ""}</p>` : ""}
+      ${p.manager_name ? `<p class="askfor">${ICON.user}<span>Demandez <b>${esc(p.manager_name)}</b>${p.manager_role ? `, ${esc(p.manager_role.toLowerCase())}` : ""}</span></p>` : ""}
+    </header>
+    ${where === "fiche" ? `<div class="seg" role="group" aria-label="Type de contact">${["appel", "email", "visite"].map((c) => `<button data-act="ctx" data-id="${pid}" data-v="${c}" aria-pressed="${ctx === c}">${{ appel: "Appel", email: "E-mail", visite: "Visite" }[c]}</button>`).join("")}</div>` : ""}
+    ${primaryAct(p, ctx)}
+    ${where !== "session" ? nextLine(p) : ""}
+    ${scriptHTML(p, ctx)}
+    ${whyHTML(p, where)}
+    ${factsHTML(p, ctx)}
+    ${p.competitor ? `<p class="notice">Équipé chez <b>${esc(p.competitor)}</b></p>` : ""}
+    ${p.notes ? `<p class="notice">${esc(p.notes)}</p>` : ""}
+    ${p._history?.length ? `<section class="stack" style="gap:8px"><h2 class="label">Historique</h2><ul class="history">${p._history.slice(0, where === "fiche" ? 60 : 4).map((x) => `<li><time>${esc(fmtDay(x.at))}</time><span><b>${esc(CTX_LABEL[x.kind] || x.kind)}</b> · ${esc(x.outcome || "")}${x.note ? `<br><span class="sub">${esc(x.note)}</span>` : ""}</span></li>`).join("")}</ul></section>` : ""}
+    <label class="field note-field" for="note-${pid}">Note pour ce contact <span class="hint">facultatif : nom de l'interlocuteur, ce qui a été dit…</span><textarea id="note-${pid}" data-note="${pid}">${esc(S.notes?.[p.id] || "")}</textarea></label>
+    ${where === "fiche" ? `<section class="stack" style="gap:8px"><h2 class="label">Enregistrer un résultat</h2><div class="inline-oc">${allOutcomes(ctx).map((oid) => ocButton(p, oid, ctx)).join("")}</div></section>` : ""}
+  </article>`;
+}
+
+/* Résultats regroupés par fréquence : les deux plus courants en grand, puis les autres */
+const DOCK = {
+  appel:  { main: ["pas_reponse", "rdv"], sub: ["rappel", "equipe", "pas_interesse"], more: ["mauvais_numero", "mail", "signe"] },
+  email:  { main: ["mail", "rdv"], sub: ["rappel", "pas_interesse"], more: ["signe"] },
+  visite: { main: ["absent", "rdv"], sub: ["plaquette", "equipe", "pas_interesse"], more: ["ferme", "signe"] },
+  rdv:    { main: ["signe", "rdv_fait"], sub: ["rdv_reporte", "pas_interesse"], more: [] },
+};
+const OC_ICON = { rdv: "check", signe: "star", pas_reponse: "redo", absent: "redo", rappel: "clock", rdv_reporte: "cal", rdv_fait: "redo", mail: "mail", plaquette: "mail", equipe: "minus", pas_interesse: "x", mauvais_numero: "phone", ferme: "minus" };
+const OC_SHORT = { rdv: "RDV pris", signe: "Signé", rappel: "Rappeler", equipe: "Déjà équipé", pas_interesse: "Pas intéressé", plaquette: "Plaquette", rdv_fait: "Proposition à suivre", rdv_reporte: "Reporté" };
+function ocLabel(oid, ctx, short) { if (oid === "mail" && ctx === "appel") return "Doc envoyée par e-mail"; return (short && OC_SHORT[oid]) || OUT[oid].label; }
+function allOutcomes(ctx) { const d = DOCK[ctx] || DOCK.appel; return [...d.main, ...d.sub, ...d.more]; }
+function ocButton(p, oid, ctx, short) {
+  const o = OUT[oid];
+  const cls = ["rdv", "signe"].includes(oid) ? "go" : oid === "pas_interesse" ? "neg" : "";
+  return `<button class="oc ${cls}" data-act="outcome" data-id="${esc(p.id)}" data-v="${oid}" data-ctx="${ctx}">${ICON[OC_ICON[oid]] || ""}${esc(ocLabel(oid, ctx, short))}</button>`;
+}
+function dockFor() {
+  let p = null, where = null;
+  if (S.view === "session" && S.session && !S.session.loading && S.session.queue?.[S.session.i]) { p = S.session.queue[S.session.i]; where = "session"; }
+  if (S.view === "visit" && S.tour?.current) { p = S.tour.stops.find((x) => x.id === S.tour.current); where = "visit"; }
+  if (!p) return "";
+  const ctx = ctxOf(p, where);
+  const d = DOCK[ctx] || DOCK.appel;
+  return `<div class="dock-in" role="group" aria-label="Résultat du contact">
+    <p class="label">Résultat</p>
+    <div class="dock-main">${d.main.map((oid) => ocButton(p, oid, ctx, true)).join("")}</div>
+    <div class="dock-sub">${d.sub.map((oid) => ocButton(p, oid, ctx, true)).join("")}${d.more.length || where === "session" ? `<button class="oc more" data-act="more" data-id="${esc(p.id)}" data-ctx="${ctx}" aria-label="Autres résultats">${ICON.dots}</button>` : ""}</div>
+  </div>`;
+}
+
+/* ---------- feuille du bas (dialog natif) ---------- */
+function openSheet(html) {
+  const d = $("#sheet");
+  d.innerHTML = `<div class="sheet-in"><div class="grabber" aria-hidden="true"></div>${html}</div>`;
+  if (!d.open) { try { d.showModal(); } catch (_) { d.setAttribute("open", ""); } }
+  setTimeout(() => d.querySelector("[autofocus]")?.focus(), 30);
+}
+function closeSheet() { const d = $("#sheet"); if (d?.open) d.close(); }
+
+function askSheet(pid, oid, ctx) {
+  const o = OUT[oid];
+  let inner = "";
+  if (o.ask === ASK_DATE) {
+    inner = `<p class="label">Quand ?</p>
+      <div class="quick">${[[1, "Demain"], [3, "Dans 3 jours"], [7, "Dans 1 semaine"], [14, "Dans 2 semaines"], [30, "Dans 1 mois"]].map(([d, l]) => `<button data-act="askDays" data-v="${d}" aria-pressed="${d === 1}">${l}</button>`).join("")}</div>
+      <label class="field" for="ask-date">Ou une date précise<input type="date" id="ask-date" value="${addDays(1).slice(0, 10)}"></label>`;
+  } else if (o.ask === ASK_DT) {
+    const d = new Date(addBusinessDays(1, 10));
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    inner = `<label class="field" for="ask-dt">Date et heure<input type="datetime-local" id="ask-dt" value="${local}" autofocus></label>`;
+  }
+  openSheet(`<h2 id="sheet-title">${esc(ocLabel(oid, ctx))}</h2>${inner}
+    <button class="btn primary big block" data-act="confirmOutcome" data-id="${esc(pid)}" data-v="${oid}">Enregistrer</button>
+    <button class="btn quiet block" data-act="closeSheet">Annuler</button>`);
+}
+function moreSheet(pid, ctx) {
+  const p = findLocal(pid);
+  const d = DOCK[ctx] || DOCK.appel;
+  openSheet(`<h2 id="sheet-title">Autre résultat</h2>
+    <div class="sheet-list">${d.more.map((oid) => ocButton(p, oid, ctx)).join("")}
+    ${S.view === "session" ? `<button class="oc" data-act="skip">${ICON.chev}Passer ce contact sans rien noter</button>` : ""}</div>
+    <button class="btn quiet block" data-act="closeSheet">Annuler</button>`);
+}
+
+function findLocal(id) {
+  if (S.session?.queue) { const p = S.session.queue.find((x) => x.id === id); if (p) return p; }
+  if (S.fiche?.id === id) return S.fiche;
+  if (S.tour?.stops) { const p = S.tour.stops.find((x) => x.id === id); if (p) return p; }
+  return null;
+}
+
+function readAsk(o) {
+  if (o.ask === ASK_DATE) {
+    const v = $("#ask-date")?.value;
+    if (!v) throw new Error("Choisissez une date.");
+    const [y, m, d] = v.split("-").map(Number);
+    return { date: new Date(y, m - 1, d, 9, 0).toISOString() };
+  }
+  if (o.ask === ASK_DT) {
+    const v = $("#ask-dt")?.value;
+    if (!v) throw new Error("Indiquez la date et l'heure du rendez-vous.");
+    return { date: new Date(v).toISOString() };
+  }
+  return {};
+}
+
+const UNDO_KEYS = ["status", "next_action", "next_action_at", "attempts", "channel", "phone_status", "last_contact_at", "competitor"];
+
+async function saveOutcome(pid, oid) {
+  const p = findLocal(pid);
+  if (!p) return;
+  const o = OUT[oid];
+  let input;
+  try { input = readAsk(o); } catch (e) { toast(e.message); return; }
+  const where = S.view;
+  const ctx = ctxOf(p, where);
+  const note = ($(`#note-${CSS.escape(pid)}`)?.value || "").trim();
+  const { patch, log, detail } = o.apply(p, input, S.settings, ctx);
+  patch.last_contact_at = new Date().toISOString();
+  const prev = Object.fromEntries(UNDO_KEYS.map((k) => [k, p[k] ?? null]));
+  try {
+    const upd = await api.update(pid, patch);
+    const logged = await api.log({ prospect_id: pid, kind: ctx, outcome: log, note: [detail, note].filter(Boolean).join(" · ") || null });
+    Object.assign(p, upd);
+    closeSheet();
+    S.list.counts = null;
+    render.reset = true;
+    if (S.notes) delete S.notes[pid];
+    delete S.ctx[pid];
+    const next = upd.next_action_at ? `${upd.next_action} ${fmtRel(upd.next_action_at)}` : "";
+    const undo = { pid, prev, logId: logged?.id, where, index: S.session?.i };
+    toast(oid === "signe" ? "Nouveau client enregistré" : `${log}${next ? " · " + next : " · clôturé"}`, 6000, undo);
+    if (where === "session") {
+      S.session.res[S.session.i] = { name: p.name, outcome: log, next, tone: toneOf(upd.status), status: upd.status };
+      S.session.i++;
+      window.scrollTo(0, 0);
+      render();
+      prefetchHistory();
+    } else if (where === "visit") {
+      p._done = log; p._tone = toneOf(upd.status);
+      S.tour.current = null; S.view = "tour";
+      window.scrollTo(0, 0); render();
+    } else if (where === "fiche") {
+      await openFiche(pid, true);
+    }
+  } catch (e) { toast("Erreur : " + e.message, 4000); }
+}
+
+async function undoOutcome(u) {
+  try {
+    const upd = await api.update(u.pid, u.prev);
+    if (u.logId) await api.unlog(u.logId);
+    const p = findLocal(u.pid); if (p) Object.assign(p, upd);
+    if (u.where === "session" && S.session) {
+      S.session.i = u.index; delete S.session.res[u.index];
+      S.view = "session";
+    } else if (u.where === "visit" && p) {
+      p._done = null; p._tone = null;
+    } else if (u.where === "fiche") {
+      await openFiche(u.pid, true);
+    }
+    S.list.counts = null;
+    toast("Résultat annulé");
+    render();
+  } catch (e) { toast("Annulation impossible : " + e.message, 4000); }
+}
+
+async function prefetchHistory() {
+  const p = S.session?.queue?.[S.session.i];
+  if (!p || p._history) return;
+  try { p._history = await api.history(p.id); if (S.view === "session" && S.session.queue[S.session.i] === p) render(); } catch (_) { /* facultatif */ }
+}
+
+async function openFiche(id, keepScroll = false) {
+  const back = S.view === "fiche" ? S.backTo : S.view === "session" ? "home" : S.view;
+  S.backTo = back === "fiche" ? "list" : back;
+  if (!keepScroll) { S.fiche = null; S.view = "fiche"; window.scrollTo(0, 0); render(); }
+  try {
+    const [p, h] = await Promise.all([api.get(id), api.history(id)]);
+    p._history = h;
+    S.fiche = p;
+  } catch (e) { S.fiche = { _error: e.message }; }
+  S.view = "fiche";
+  render();
+}
+
+function vFiche() {
+  const p = S.fiche;
+  if (!p) return loadingBlock();
+  if (p._error) return errorBlock(p._error);
+  const nextLocal = p.next_action_at ? new Date(new Date(p.next_action_at).getTime() - new Date(p.next_action_at).getTimezoneOffset() * 60000).toISOString().slice(0, 10) : "";
+  return `${focusHTML(p, "fiche")}
+  <details class="more"><summary>Modifier la fiche</summary><div class="body">
+    <div class="grid2">
+      <label class="field" for="ed-phone">Téléphone<input type="tel" id="ed-phone" inputmode="tel" value="${esc(p.phone || "")}"></label>
+      <label class="field" for="ed-email">E-mail<input type="email" id="ed-email" inputmode="email" value="${esc(p.email || "")}"></label>
+      <label class="field" for="ed-status">Statut<select id="ed-status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${p.status === k ? " selected" : ""}>${esc(v.label)}</option>`).join("")}</select></label>
+      <label class="field" for="ed-next">Prochaine action le<input type="date" id="ed-next" value="${nextLocal}"></label>
+    </div>
+    <label class="field" for="ed-notes">Notes permanentes<textarea id="ed-notes">${esc(p.notes || "")}</textarea></label>
+    <button class="btn primary" data-act="saveFiche" data-id="${esc(p.id)}">Enregistrer les modifications</button>
+  </div></details>`;
+}
+
+/* =====================================================================
+   12. Liste des prospects (CRM)
+   ===================================================================== */
+async function loadList() {
+  const gen = ++renderGen;
+  const L = S.list;
+  try {
+    const [rows, counts] = await Promise.all([
+      api.list(L.status, L.q),
+      L.counts ? Promise.resolve(L.counts) : Promise.all(LIST_FILTERS.map(([k]) => api.count(k))).then((a) => Object.fromEntries(LIST_FILTERS.map(([k], i) => [k, a[i]]))),
+    ]);
+    if (gen !== renderGen) return;
+    L.rows = rows; L.counts = counts; L.error = null;
+  } catch (e) { L.error = e.message; L.rows = []; }
+  if (S.view === "list") render();
+}
+
+function vList() {
+  const L = S.list;
+  return `
+  <div class="row between"><h1>Prospects</h1><button class="btn" data-act="addForm">${ICON.plus}Ajouter</button></div>
+  ${S.adding ? addFormHTML() : ""}
+  <div class="stack">
+    <div class="search">${ICON.search}<label class="sr" for="list-q">Rechercher</label><input type="search" id="list-q" placeholder="Nom, ville ou numéro" value="${esc(L.q)}"></div>
+    <div class="filters" role="group" aria-label="Filtrer par statut">
+      ${LIST_FILTERS.map(([k, l]) => `<button class="filter" data-act="filter" data-v="${k}" aria-pressed="${L.status === k}">${esc(l)}${L.counts ? `<span class="n">${L.counts[k]}</span>` : ""}</button>`).join("")}
+    </div>
+  </div>
+  ${L.error ? errorBlock(L.error) : ""}
+  ${L.rows === null ? loadingBlock() : L.rows.length === 0 ? `<div class="rows"><p class="empty">${L.q ? "Aucun prospect ne correspond à cette recherche." : "Aucun prospect dans cette catégorie pour le moment."}</p></div>` : `
+  <div class="rows">${L.rows.map((p) => `
+    <button class="prow" data-act="open" data-id="${esc(p.id)}">
+      <span class="n">${esc(p.name)}</span>
+      <span class="r">${L.status === "nouveau" ? `<span class="score">${p.score}<small>/100</small></span>` : stamp(p.status)}</span>
+      <span class="m">
+        <span>${esc(p.city || "")}${p.distance_km != null ? " · " + esc(km(p.distance_km)) : ""}</span>
+        <span>${esc(p.potential || CAT[p.category] || p.naf_label || "")}</span>
+        ${p.next_action_at ? `<span class="${dayDiff(p.next_action_at) < 0 ? "late" : ""}">${esc(p.next_action || "")} ${esc(p.status === "rdv" ? fmtDay(p.next_action_at, true) : fmtRel(p.next_action_at))}</span>` : ""}
+      </span>
+    </button>`).join("")}
+  </div>
+  ${L.rows.length >= 60 ? `<p class="meta">Les 60 premiers sont affichés. Utilisez la recherche pour trouver un prospect précis.</p>` : ""}`}`;
+}
+
+function addFormHTML() {
+  return `<form class="panel" data-form="add" aria-labelledby="add-title">
+    <div class="stack" style="gap:4px"><h2 id="add-title">Nouveau prospect</h2><p class="sub">Recommandation d'un client, demande entrante ou entreprise repérée en tournée.</p></div>
+    <label class="field" for="add-name">Nom de l'entreprise<input type="text" id="add-name" required autocomplete="organization"></label>
+    <div class="grid2">
+      <label class="field" for="add-phone">Téléphone<input type="tel" id="add-phone" inputmode="tel"></label>
+      <label class="field" for="add-email">E-mail<input type="email" id="add-email" inputmode="email"></label>
+    </div>
+    <label class="field" for="add-addr">Adresse <span class="hint">rue et ville</span><input type="text" id="add-addr" autocomplete="street-address"></label>
+    <div class="grid2">
+      <label class="field" for="add-source">Origine<select id="add-source"><option value="recommandation">Recommandé par un client</option><option value="entrant">Il nous a contactés</option><option value="tournee">Repéré en tournée</option><option value="autre">Autre</option></select></label>
+      <label class="field" for="add-when">À traiter<select id="add-when"><option value="0">Aujourd'hui</option><option value="1">Demain</option><option value="7">Dans une semaine</option></select></label>
+    </div>
+    <label class="field" for="add-note">Note<textarea id="add-note"></textarea></label>
+    <div class="row"><button class="btn primary" type="submit">Ajouter le prospect</button><button class="btn quiet" type="button" data-act="addCancel">Annuler</button></div>
+  </form>`;
+}
+
+async function geocode(q) {
+  const urls = [`https://data.geopf.fr/geocodage/search?q=${enc(q)}&limit=1`, `https://api-adresse.data.gouv.fr/search/?q=${enc(q)}&limit=1`];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u); if (!r.ok) continue;
+      const j = await r.json(); const f = j.features?.[0];
+      if (f) return { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], label: f.properties.label, city: f.properties.city, postcode: f.properties.postcode };
+    } catch (_) { /* essai suivant */ }
+  }
+  return null;
+}
+
+async function submitAdd() {
+  const name = $("#add-name").value.trim();
+  if (!name) { toast("Indiquez le nom de l'entreprise."); return; }
+  const phone = $("#add-phone").value.trim(), email = $("#add-email").value.trim(), addr = $("#add-addr").value.trim();
+  const source = $("#add-source").value, days = Number($("#add-when").value), note = $("#add-note").value.trim();
+  try {
+    const dup = await api.findDuplicate(name, phone);
+    if (dup && !S.addConfirmDup) {
+      S.addConfirmDup = true;
+      toast(`Déjà dans la base : ${dup.name} (${STATUS[dup.status]?.label || dup.status}). Appuyez à nouveau sur Ajouter pour le créer quand même.`, 6000);
+      return;
+    }
+    S.addConfirmDup = false;
+    const g = addr ? await geocode(addr) : null;
+    const row = {
+      name, phone: phone || null, email: email || null, address: g?.label || addr || null, city: g?.city || null, postcode: g?.postcode || null,
+      lat: g?.lat ?? null, lng: g?.lng ?? null, distance_km: g ? Math.round(haversine(S.settings.center, g) * 10) / 10 : null,
+      category: "manuel", naf_label: { recommandation: "Recommandation d'un client", entrant: "Demande entrante", tournee: "Repéré en tournée", autre: "Ajout manuel" }[source],
+      source, notes: note || null, score: source === "entrant" ? 95 : source === "recommandation" ? 90 : 60,
+      score_reasons: [{ recommandation: "Recommandé par un client : le meilleur type de prospect", entrant: "Il a pris contact lui-même : à rappeler vite", tournee: "Repéré sur le terrain", autre: "Ajouté à la main" }[source]],
+      status: "a_relancer", next_action: source === "entrant" ? "Rappeler la demande" : "Premier contact", next_action_at: days === 0 ? new Date().toISOString() : addDays(days),
+      enriched_at: new Date().toISOString(),
+    };
+    row.channel = initialChannel(row);
+    const p = await api.insert(row);
+    await api.log({ prospect_id: p.id, kind: "note", outcome: "Ajouté", note: row.naf_label });
+    S.adding = false; S.list.counts = null;
+    toast("Prospect ajouté");
+    openFiche(p.id);
+  } catch (e) { toast("Erreur : " + e.message, 4000); }
+}
+
+/* =====================================================================
+   13. Tournée de visites
+   ===================================================================== */
+function vTour() {
+  const T = S.tour || (S.tour = { count: 5, from: "home", stops: null, current: null });
+  const setup = `
+  <section class="panel" aria-labelledby="tour-setup">
+    <h2 id="tour-setup">${T.stops ? "Refaire une tournée" : "Préparer une tournée"}</h2>
+    <div class="stack" style="gap:8px"><p class="label">Nombre de visites</p>
+      <div class="seg" role="group" aria-label="Nombre de visites">${[3, 5, 8].map((n) => `<button data-act="tourCount" data-v="${n}" aria-pressed="${T.count === n}">${n}</button>`).join("")}</div></div>
+    <div class="stack" style="gap:8px"><p class="label">Départ</p>
+      <div class="seg" role="group" aria-label="Point de départ">
+        <button data-act="tourFrom" data-v="home" aria-pressed="${T.from === "home"}">${esc(S.settings?.center?.label?.split(" ")[0] || "Départ")}</button>
+        <button data-act="tourFrom" data-v="gps" aria-pressed="${T.from === "gps"}">Ma position</button>
+      </div></div>
+    <button class="btn ${T.stops ? "" : "primary big "}block" data-act="buildTour">${ICON.route}${T.stops ? "Recalculer" : "Préparer la tournée"}</button>
+  </section>`;
+  const head = `<div class="greet"><p class="label">Sur le terrain</p><h1>Tournée</h1>${T.stops ? "" : `<p class="sub">D'abord les visites prévues aujourd'hui, puis les commerces proches où le patron est sur place, dans l'ordre le plus court.</p>`}</div>`;
+  if (T.loading) return head + loadingBlock("Je calcule l'itinéraire et je cherche les horaires…");
+  if (T.error) return head + errorBlock(T.error) + setup;
+  if (!T.stops) return head + setup;
+  if (!T.stops.length) return head + `<p class="notice">Aucune visite à faire pour le moment. Lancez une session d'appels depuis l'accueil.</p>` + setup;
+  const pts = T.stops.filter((p) => p.lat != null);
+  const origin = T.origin ? `&origin=${T.origin.lat},${T.origin.lng}` : "";
+  const last = pts[pts.length - 1];
+  const way = pts.slice(0, -1).slice(0, 8).map((p) => `${p.lat},${p.lng}`).join("|");
+  const route = last ? `https://www.google.com/maps/dir/?api=1${origin}&destination=${last.lat},${last.lng}${way ? `&waypoints=${enc(way)}` : ""}&travelmode=driving` : null;
+  const done = T.stops.filter((p) => p._done).length;
+  return `${head}
+  <section class="stack">
+    ${progressHTML(done, T.stops.length, done > 1 ? "visites faites" : "visite faite", [
+      [T.stops.filter((p) => p._done && p._tone === "go").length, "intéressé", "intéressés", "go"],
+      [T.stops.filter((p) => p._done && p._tone === "wait").length, "à revoir", "à revoir", "wait"],
+    ])}
+    ${route ? `<a class="btn primary block" href="${esc(route)}" target="_blank" rel="noopener">${ICON.route}Itinéraire complet dans Google Maps</a>` : ""}
+    <div class="stops">${T.stops.map((p, k) => `
+      <button class="stop${p._done ? " done" : ""}" data-act="visit" data-id="${esc(p.id)}">
+        <span class="k num">${p._done ? ICON.check : k + 1}</span>
+        <span><span class="n">${esc(p.name)}</span><span class="m">${esc(p.address || p.city || "")}</span><span class="m">${p._leg != null ? `${esc(km(p._leg))} depuis l'arrêt précédent` : ""}${p.next_action ? ` · ${esc(p.next_action)}` : ""}</span></span>
+        <span>${p._done ? stamp(p.status, p._done) : ""}</span>
+      </button>`).join("")}
+    </div>
+  </section>
+  ${setup}`;
+}
+
+function vVisit() {
+  const p = S.tour?.stops?.find((x) => x.id === S.tour.current);
+  if (!p) return vTour();
+  return focusHTML(p, "visit");
+}
+
+async function buildTour() {
+  const T = S.tour;
+  T.loading = true; T.error = null; render();
+  try {
+    let origin = { lat: S.settings.center.lat, lng: S.settings.center.lng };
+    if (T.from === "gps") {
+      origin = await new Promise((res, rej) => navigator.geolocation
+        ? navigator.geolocation.getCurrentPosition((pos) => res({ lat: pos.coords.latitude, lng: pos.coords.longitude }), () => rej(new Error("Position indisponible : autorisez la localisation ou partez du point de départ.")), { timeout: 10000 })
+        : rej(new Error("Localisation non disponible sur cet appareil.")));
+    }
+    const due = (await api.due(endOfToday())).filter((p) => p.status !== "rdv" && channelOf(p) === "visite" && p.lat != null);
+    const fresh = (await api.fresh(40, due.map((p) => p.id), "visite")).filter((p) => p.lat != null);
+    // les visites prévues passent en premier, puis les meilleurs prospects proches
+    const picked = due.slice(0, T.count);
+    const near = fresh.map((p) => ({ p, d: haversine(origin, p) })).sort((a, b) => (b.p.score - b.d * 2) - (a.p.score - a.d * 2));
+    for (const x of near) { if (picked.length >= T.count) break; picked.push(x.p); }
+    // ordre de passage : le plus proche à chaque étape
+    const route = []; let cur = origin; const rest = [...picked];
+    while (rest.length) {
+      let bi = 0, bd = Infinity;
+      rest.forEach((p, i) => { const d = haversine(cur, p); if (d < bd) { bd = d; bi = i; } });
+      const [p] = rest.splice(bi, 1); p._leg = Math.round(bd * 10) / 10; route.push(p); cur = p;
+    }
+    const toEnrich = route.filter((p) => !p.enriched_at).map((p) => p.id);
+    if (toEnrich.length) {
+      const res = await api.fn("enrich", { ids: toEnrich });
+      const byId = Object.fromEntries((res.prospects || []).map((p) => [p.id, p]));
+      route.forEach((p, i) => { if (byId[p.id]) route[i] = Object.assign(byId[p.id], { _leg: p._leg }); });
+    }
+    for (const p of route) if (!p.channel) { p.channel = "visite"; api.update(p.id, { channel: "visite" }).catch(() => {}); }
+    T.stops = route; T.origin = origin; T.open = null;
+  } catch (e) { T.error = e.message; }
+  T.loading = false;
+  render();
+}
+
+/* =====================================================================
+   14. Réglages
+   ===================================================================== */
+async function loadSettingsView() {
+  if (S.googleOn === null) {
+    try { const r = await api.fn("status"); S.googleOn = !!r.google; S.googleCap = r.cap; } catch (_) { S.googleOn = false; }
+    if (S.view === "settings") render();
+  }
+}
+
+function vSettings() {
+  const s = S.settings;
+  const H = S.harvesting;
+  return `
+  <h1>Réglages</h1>
+  <form class="panel" data-form="settings" aria-label="Réglages">
+    <p class="label">Vous</p>
+    <div class="grid2">
+      <label class="field" for="st-sender">Prénom et nom<input type="text" id="st-sender" value="${esc(s.sender)}" autocomplete="name"></label>
+      <label class="field" for="st-company">Entreprise<input type="text" id="st-company" value="${esc(s.company)}" autocomplete="organization"></label>
+      <label class="field" for="st-phone">Téléphone<input type="tel" id="st-phone" inputmode="tel" value="${esc(s.phone)}"></label>
+    </div>
+    <label class="field" for="st-offer">Votre offre en une phrase <span class="hint">reprise dans les scripts et les e-mails</span><textarea id="st-offer">${esc(s.offer)}</textarea></label>
+
+    <p class="label">Zone de prospection</p>
+    <div class="grid2">
+      <label class="field" for="st-center">Point de départ <span class="hint">adresse ou ville</span><input type="text" id="st-center" value="${esc(s.center.label)}"></label>
+      <label class="field" for="st-radius">Rayon : <span id="st-radius-v" class="num">${s.radius}</span> km<input type="range" id="st-radius" min="3" max="30" step="1" value="${s.radius}"></label>
+    </div>
+    <label class="field" for="st-mpc">Minutes par contact <span class="hint">pour calculer la taille d'une session</span><input type="number" id="st-mpc" min="2" max="15" value="${s.minutesPerContact}" inputmode="numeric"></label>
+
+    <p class="label">Relances</p>
+    <div class="grid2">
+      <label class="field" for="st-d-na">Après « pas de réponse » <span class="hint">jours ouvrés</span><input type="number" id="st-d-na" min="1" max="15" value="${s.delays.noAnswer}" inputmode="numeric"></label>
+      <label class="field" for="st-d-em">Après un e-mail <span class="hint">jours ouvrés</span><input type="number" id="st-d-em" min="1" max="15" value="${s.delays.afterEmail}" inputmode="numeric"></label>
+      <label class="field" for="st-d-rv">Repasser après une absence <span class="hint">jours</span><input type="number" id="st-d-rv" min="1" max="30" value="${s.delays.revisit}" inputmode="numeric"></label>
+    </div>
+    <button class="btn primary" type="submit">Enregistrer les réglages</button>
+  </form>
+
+  <section class="panel" aria-labelledby="base-t">
+    <h2 id="base-t">Base d'entreprises</h2>
+    <p class="sub">Registre officiel des entreprises, filtré sur les activités qui achètent des distributeurs, dans un rayon de ${s.radius} km autour de ${esc(s.center.label)}.</p>
+    <ul class="base-st">
+      <li><b>Registre des entreprises</b><span>${s.harvest?.done_at ? `à jour le ${esc(fmtDay(s.harvest.done_at))}` : s.harvest?.cursor ? "en cours, à poursuivre" : "pas encore construit"}</span></li>
+      <li><b>Carte des cafés et commerces</b><span>${s.osm?.at && s.osm.key === centerKey(s) ? `${esc(String(s.osm.count ?? S.mapCount ?? "–"))} lieux, lue le ${esc(fmtDay(s.osm.at))}` : "pas encore lue"}</span></li>
+      <li><b>Appels d'offres publics</b><span>${s.tenders?.at ? `vérifiés le ${esc(fmtDay(s.tenders.at))}` : "pas encore vérifiés"}</span></li>
+      <li><b>Notes</b><span>${s.rescored_at ? `recalculées le ${esc(fmtDay(s.rescored_at))}` : "calculées à l'arrivée de chaque prospect"}</span></li>
+    </ul>
+    <p class="meta">Les prospects déjà présents et leur historique sont conservés, sans doublon.</p>
+    ${H ? `<div class="stack" style="gap:8px"><div class="row"><span class="spin"></span><span>${esc(H.label)} <span class="meta num">(${H.group}/${H.groups})</span></span></div><div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="${H.groups}" aria-valuenow="${H.group}"><i style="width:${Math.round((H.group / H.groups) * 100)}%"></i></div></div>` : `<div class="row"><button class="btn" data-act="harvest">${s.harvest?.cursor ? "Poursuivre la construction" : "Mettre à jour la base"}</button><button class="btn quiet" data-act="rescore">Recalculer les notes</button></div>`}
+    <p class="meta">Recherche des téléphones (Google) : ${S.googleOn === null ? "vérification…" : S.googleOn ? `active, ${S.googleCap || 30} fiches par jour au maximum` : DEMO ? "non disponible en démonstration" : "non configurée (voir le guide d'installation)"}.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="cli-t">
+    <h2 id="cli-t">Vos clients actuels</h2>
+    <p class="sub">Un nom par ligne, avec la ville si possible. L'outil ne les proposera jamais, et cherchera en priorité les entreprises qui leur ressemblent ou qui travaillent à côté d'eux.</p>
+    <label class="field" for="st-clients">Liste des clients <span class="hint">ex. « Transports Martin, Lattes »</span><textarea id="st-clients" data-typed rows="6" placeholder="Transports Martin, Lattes&#10;EHPAD Les Oliviers, Saint-Jean-de-Védas">${esc(s.clients_text || "")}</textarea></label>
+    ${S.clientsBusy ? `<div class="row"><span class="spin"></span><span>Recherche de vos clients dans le registre…</span></div>` : `<button class="btn" data-act="learnClients">Analyser mes clients</button>`}
+    ${S.clientsResult ? `<p class="meta">${plural(S.clientsResult.found.length, "client reconnu", "clients reconnus")}${S.clientsResult.missing.length ? ` · introuvables : ${esc(S.clientsResult.missing.join(", "))} (ajoutez la ville)` : ""}.</p>` : s.clients_at ? `<p class="meta">Analysés le ${esc(fmtDay(s.clients_at))}.</p>` : ""}
+  </section>
+
+  <section class="panel" aria-labelledby="data-t">
+    <h2 id="data-t">Données</h2>
+    <div class="row">
+      <button class="btn" data-act="export">Exporter en tableur (CSV)</button>
+      ${!DEMO ? `<button class="btn danger" data-act="logout">Se déconnecter</button>` : ""}
+    </div>
+    ${S.user?.email ? `<p class="meta">Connecté : ${esc(S.user.email)}</p>` : ""}
+  </section>`;
+}
+
+async function saveSettingsForm() {
+  const s = { ...S.settings, delays: { ...S.settings.delays } };
+  s.sender = $("#st-sender").value.trim();
+  s.company = $("#st-company").value.trim();
+  s.phone = $("#st-phone").value.trim();
+  s.offer = $("#st-offer").value.trim() || DEFAULTS.offer;
+  s.radius = Number($("#st-radius").value) || 10;
+  s.minutesPerContact = Math.max(2, Number($("#st-mpc").value) || 4);
+  s.delays.noAnswer = Number($("#st-d-na").value) || 2;
+  s.delays.afterEmail = Number($("#st-d-em").value) || 4;
+  s.delays.revisit = Number($("#st-d-rv").value) || 7;
+  const label = $("#st-center").value.trim();
+  try {
+    if (label && label !== S.settings.center.label) {
+      const g = await geocode(label);
+      if (!g) { toast("Adresse introuvable : précisez la ville."); return; }
+      s.center = { lat: g.lat, lng: g.lng, label: g.label };
+    }
+    await api.saveSettings(s);
+    S.settings = s;
+    toast("Réglages enregistrés");
+    render();
+  } catch (e) { toast("Erreur : " + e.message, 4000); }
+}
+
+async function exportCsv() {
+  try {
+    const rows = await api.exportAll();
+    const cols = [["name", "Nom"], ["legal_name", "Raison sociale"], ["status", "Statut"], ["score", "Note"], ["phone", "Téléphone"], ["email", "E-mail"], ["address", "Adresse"], ["city", "Ville"], ["naf_label", "Activité"], ["headcount_label", "Effectif"], ["next_action", "Prochaine action"], ["next_action_at", "Date"], ["competitor", "Concurrent"], ["notes", "Notes"], ["siret", "SIRET"]];
+    const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [cols.map((c) => cell(c[1])).join(";")].concat(rows.map((r) => cols.map(([k]) => cell(k === "status" ? STATUS[r.status]?.label : k === "next_action_at" && r[k] ? fmtDay(r[k]) : r[k])).join(";")));
+    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `prospects-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch (e) { toast("Erreur : " + e.message, 4000); }
+}
+
+/* =====================================================================
+   15. Événements
+   ===================================================================== */
+const ACT = {
+  nav: (t) => { if (t.dataset.status) { S.list.status = t.dataset.status; S.list.rows = null; } go(t.dataset.v); },
+  minutes: (t) => { S.minutes = Number(t.dataset.v); render(); },
+  startSession: () => startSession(),
+  skip: () => {
+    const s = S.session; if (!s) return;
+    closeSheet();
+    s.res[s.i] = { skip: true, name: s.queue[s.i].name };
+    s.i++; window.scrollTo(0, 0); render(); prefetchHistory();
+  },
+  endSession: () => { S.session.i = S.session.queue.length; window.scrollTo(0, 0); render(); },
+  open: (t) => openFiche(t.dataset.id),
+  outcome: (t) => {
+    const o = OUT[t.dataset.v];
+    if (o.ask) askSheet(t.dataset.id, t.dataset.v, t.dataset.ctx);
+    else saveOutcome(t.dataset.id, t.dataset.v);
+  },
+  more: (t) => moreSheet(t.dataset.id, t.dataset.ctx),
+  confirmOutcome: (t) => saveOutcome(t.dataset.id, t.dataset.v),
+  closeSheet: () => closeSheet(),
+  askDays: (t) => { const el = $("#ask-date"); if (el) el.value = addDays(Number(t.dataset.v)).slice(0, 10); document.querySelectorAll('[data-act="askDays"]').forEach((b) => b.setAttribute("aria-pressed", b === t)); },
+  ctx: (t) => { S.ctx[t.dataset.id] = t.dataset.v; render(); },
+  copy: (t) => copyText(t.dataset.v),
+  copyMail: (t) => { const p = findLocal(t.dataset.id); if (p) { const m = emailOf(p, S.settings); copyText(`Objet : ${m.subject}\n\n${m.body}`); } },
+  undo: () => { const u = S.undo; S.undo = null; $("#toast").hidden = true; if (u) undoOutcome(u); },
+  savePhone: async (t) => {
+    const id = t.dataset.id; const v = $(`#phone-${CSS.escape(id)}`)?.value.trim();
+    if (!v) { toast("Saisissez un numéro."); return; }
+    try {
+      const upd = await api.update(id, { phone: v, phone_status: null });
+      const p = findLocal(id); if (p) Object.assign(p, upd);
+      render.reset = true; toast("Numéro enregistré"); render();
+    } catch (e) { toast("Erreur : " + e.message); }
+  },
+  saveFiche: async (t) => {
+    const id = t.dataset.id;
+    const d = $("#ed-next").value;
+    const patch = { phone: $("#ed-phone").value.trim() || null, email: $("#ed-email").value.trim() || null, status: $("#ed-status").value, notes: $("#ed-notes").value.trim() || null };
+    if (d) { const [y, m, dd] = d.split("-").map(Number); patch.next_action_at = new Date(y, m - 1, dd, 9).toISOString(); patch.next_action = S.fiche.next_action || "Relancer"; }
+    else patch.next_action_at = null;
+    if (FINAL.includes(patch.status)) { patch.next_action_at = null; patch.next_action = null; }
+    try { await api.update(id, patch); await api.log({ prospect_id: id, kind: "note", outcome: "Fiche modifiée", note: null }); S.list.counts = null; render.reset = true; toast("Fiche enregistrée"); openFiche(id, true); }
+    catch (e) { toast("Erreur : " + e.message); }
+  },
+  filter: (t) => { S.list.status = t.dataset.v; S.list.rows = null; render(); loadList(); },
+  addForm: () => { S.adding = true; S.addConfirmDup = false; render(); setTimeout(() => $("#add-name")?.focus(), 30); },
+  addCancel: () => { S.adding = false; render(); },
+  tourCount: (t) => { S.tour.count = Number(t.dataset.v); render(); },
+  tourFrom: (t) => { S.tour.from = t.dataset.v; render(); },
+  buildTour: () => buildTour(),
+  visit: async (t) => {
+    S.tour.current = t.dataset.id; S.view = "visit"; window.scrollTo(0, 0); render();
+    const p = S.tour.stops.find((x) => x.id === t.dataset.id);
+    if (p && !p._history) { try { p._history = await api.history(p.id); if (S.view === "visit" && S.tour.current === p.id) render(); } catch (_) { /* facultatif */ } }
+  },
+  backTour: () => { S.tour.current = null; S.view = "tour"; window.scrollTo(0, 0); render(); },
+  rescore: async () => {
+    try {
+      const n = await rescoreAll(() => { if (S.view === "settings") render(); });
+      toast(`${plural(n, "note recalculée", "notes recalculées")}`, 4000);
+    } catch (e) { S.harvesting = null; toast("Erreur : " + e.message, 5000); }
+    if (S.view === "settings") render();
+  },
+  learnClients: async () => {
+    const text = $("#st-clients").value;
+    const names = text.split("\n").map((x) => x.trim()).filter(Boolean).slice(0, 200);
+    if (!names.length) { toast("Écrivez au moins un nom de client."); return; }
+    S.clientsBusy = true; render();
+    try {
+      const s = S.settings;
+      const r = await api.fn("learn_clients", { names, center: { lat: s.center.lat, lng: s.center.lng }, departement: s.departement || "34" });
+      S.clientsResult = { found: r.found || [], missing: r.missing || [] };
+      s.clients_text = text; s.clients_at = new Date().toISOString();
+      await api.saveSettings(s);
+      S.clientsBusy = false; render();
+      await rescoreAll(() => { if (S.view === "settings") render(); });
+      toast("Clients analysés, notes mises à jour", 4000);
+    } catch (e) { S.clientsBusy = false; S.harvesting = null; toast("Erreur : " + e.message, 5000); }
+    if (S.view === "settings") render();
+  },
+  harvest: async () => {
+    try {
+      const n = await fullUpdate(() => { if (S.view === "settings") render(); });
+      toast(`Base à jour : ${plural(n, "nouvelle entreprise", "nouvelles entreprises")}`, 4000);
+    } catch (e) { S.harvesting = null; toast("Erreur : " + e.message, 5000); }
+    if (S.view === "settings") render();
+  },
+  export: () => exportCsv(),
+  logout: async () => { await api.logout(); S.user = null; S.view = "login"; render(); },
+};
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-act]");
+  if (!t) return;
+  e.preventDefault();
+  ACT[t.dataset.act]?.(t, e);
+});
+// toucher le fond de la feuille la ferme
+document.addEventListener("click", (e) => { if (e.target.id === "sheet") closeSheet(); });
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.id && t.closest?.("#view")) t.dataset.typed = "1";
+  if (t.dataset?.note) { (S.notes ||= {})[t.dataset.note] = t.value; }
+  if (t.id === "st-radius") { const v = $("#st-radius-v"); if (v) v.textContent = t.value; }
+  if (t.id === "list-q") {
+    S.list.q = t.value;
+    clearTimeout(ACT._q);
+    ACT._q = setTimeout(() => { loadList(); }, 350);
+  }
+});
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.id && t.closest?.("#view")) t.dataset.typed = "1";
+});
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("form[data-form]");
+  if (!f) return;
+  e.preventDefault();
+  if (f.dataset.form === "login") {
+    S.error = null;
+    try { S.user = await api.login($("#login-email").value.trim(), $("#login-pass").value); await boot(); }
+    catch (err) { S.error = err.message; render(); }
+  } else if (f.dataset.form === "settings") saveSettingsForm();
+  else if (f.dataset.form === "add") submitAdd();
+});
+
+/* =====================================================================
+   16. Démarrage
+   ===================================================================== */
+async function boot() {
+  try {
+    S.user = await api.me();
+    if (!S.user) { S.view = "login"; render(); return; }
+    S.settings = mergeSettings(await api.getSettings());
+    go("home");
+  } catch (e) {
+    $("#view").innerHTML = errorBlock("Connexion à la base impossible : " + e.message);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
